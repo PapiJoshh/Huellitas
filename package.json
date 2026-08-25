@@ -1,0 +1,14 @@
+{
+  "name": "huellita-perdida-workspace",
+  "private": true,
+  "scripts": {
+    "dev": "concurrently \"npm --prefix backend run dev\" \"npm --prefix frontend run dev -- --host 0.0.0.0\"",
+    "build": "npm --prefix frontend run build",
+    "preview": "npm --prefix frontend run preview -- --host 0.0.0.0",
+    "server": "npm --prefix backend run dev",
+    "test:gold": "node scripts/golden-test.cjs"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  }
+}
