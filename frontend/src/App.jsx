@@ -709,7 +709,7 @@ export default function HuellitaPerdidaApp() {
       }
 
       if (result.checkoutUrl && result.demoMode) {
-        setPaymentStatus('El checkout real no está configurado todavía. ' + result.message);
+        setPaymentStatus('No se abrió la tarjeta porque Render no tiene configurado STRIPE_SECRET_KEY. Agrega una clave sk_test_ en las variables del servicio y vuelve a desplegar.');
         return;
       }
 

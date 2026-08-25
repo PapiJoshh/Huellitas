@@ -6,8 +6,15 @@ async function request(path, options) {
   }
 
   try {
-    return await fetch(`${API_BASE}${path}`, options);
-  } catch {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 20000);
+    const response = await fetch(`${API_BASE}${path}`, { ...options, signal: controller.signal });
+    clearTimeout(timeout);
+    return response;
+  } catch (error) {
+    if (error.name === 'AbortError') {
+      throw new Error('El servidor de pagos tardó demasiado. Despierta el servicio de Render e inténtalo otra vez.');
+    }
     throw new Error('No se pudo conectar con el servidor de pagos. Verifica que la API de Render esté activa.');
   }
 }
