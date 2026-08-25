@@ -1,4 +1,4 @@
-const API_BASE = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '');
+const API_BASE = 'https://huellitas-fpng.onrender.com';
 
 async function request(path, options) {
   if (!API_BASE) {
