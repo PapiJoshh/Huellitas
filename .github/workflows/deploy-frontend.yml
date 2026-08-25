@@ -36,7 +36,12 @@ jobs:
         run: npm run build
         working-directory: frontend
         env:
-          VITE_API_URL: ${{ vars.VITE_API_URL }}
+          VITE_API_URL: ${{ vars.VITE_API_URL || secrets.VITE_API_URL }}
+
+        - name: Verify public API configuration
+          run: test -n "$VITE_API_URL" && [[ "$VITE_API_URL" == https://* ]] || (echo "Falta VITE_API_URL con la URL HTTPS de Render"; exit 1)
+          env:
+            VITE_API_URL: ${{ vars.VITE_API_URL || secrets.VITE_API_URL }}
 
       - name: Configure Pages
         uses: actions/configure-pages@v5
