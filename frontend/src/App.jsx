@@ -475,7 +475,7 @@ function DetailModal({ r, onClose, onResolve, onDelete, onReveal }) {
   );
 }
 
-function PlanCard({ id, current, onChoose, popular, title, price, features }) {
+function PlanCard({ id, current, onChoose, popular, title, price, features, loading }) {
   const isCurrent = current === id;
   return (
     <div
@@ -510,14 +510,14 @@ function PlanCard({ id, current, onChoose, popular, title, price, features }) {
         </ul>
         <button
           onClick={() => onChoose(id)}
-          disabled={isCurrent}
+          disabled={isCurrent || loading}
           style={{
             backgroundColor: isCurrent ? C.paperAlt : C.red,
             color: isCurrent ? C.muted : C.paper,
           }}
           className="w-full py-2 rounded font-bold text-sm"
         >
-          {isCurrent ? "Tu plan actual" : "Elegir este plan"}
+          {isCurrent ? "Tu plan actual" : loading ? "Abriendo pago..." : id === "gratis" ? "Usar plan gratis" : "Pagar con tarjeta"}
         </button>
       </div>
     </div>
@@ -708,12 +708,12 @@ export default function HuellitaPerdidaApp() {
         return;
       }
 
-      if (result.checkoutUrl) {
-        setPaymentStatus('Modo demo activo: ' + result.message);
+      if (result.checkoutUrl && result.demoMode) {
+        setPaymentStatus('El checkout real no está configurado todavía. ' + result.message);
+        return;
       }
 
-      setAccount((a) => ({ ...a, plan: id }));
-      showToast('Pago iniciado correctamente.');
+      setPaymentStatus('Stripe no devolvió una dirección de pago válida. Revisa la configuración de Render.');
     } catch (error) {
       setPaymentStatus(error.message || 'No se pudo iniciar el flujo de pago.');
       showToast('No se pudo pagar');
@@ -1323,6 +1323,7 @@ export default function HuellitaPerdidaApp() {
                 popular
                 title="Refugio Pro"
                 price="$249"
+                loading={paymentLoading}
                 features={[
                   "Publicaciones de adopción ilimitadas",
                   "Insignia de refugio verificado",
@@ -1336,6 +1337,7 @@ export default function HuellitaPerdidaApp() {
                 onChoose={elegirPlan}
                 title="Negocio Premium"
                 price="$499"
+                loading={paymentLoading}
                 features={[
                   "Todo lo de Refugio Pro",
                   "Perfil de negocio con servicios (veterinaria, estética, guardería)",
