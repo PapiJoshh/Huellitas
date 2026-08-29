@@ -13,9 +13,9 @@ async function request(path, options) {
     return response;
   } catch (error) {
     if (error.name === 'AbortError') {
-      throw new Error('El servidor de pagos tardó demasiado. Despierta el servicio de Render e inténtalo otra vez.');
+      throw new Error('El servidor de pagos tardó demasiado. Despierta el servicio de Render e inténtalo otra vez.', { cause: error });
     }
-    throw new Error('No se pudo conectar con el servidor de pagos. Verifica que la API de Render esté activa.');
+    throw new Error('No se pudo conectar con el servidor de pagos. Verifica que la API de Render esté activa.', { cause: error });
   }
 }
 
