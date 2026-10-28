@@ -16,6 +16,7 @@ import {
   Phone,
   Plus,
   Search,
+  Share2,
   ShieldCheck,
   Sparkles,
   Star,
@@ -27,6 +28,12 @@ import {
   createCheckoutSession,
   registerSuccessfulPayment,
 } from "./lib/payments";
+import {
+  HelpView,
+  HowItWorks,
+  PlanCompare,
+  SiteFooter,
+} from "./sections.jsx";
 import heroImage from "./assets/huellita-hero.webp";
 
 const CIUDADES = [
@@ -306,13 +313,12 @@ function ReportCard({ report, onOpen }) {
       onClick={onOpen}
       aria-label={`Abrir reporte de ${report.nombre || "mascota sin nombre"}`}
     >
-      <span className="pin" aria-hidden="true" />
-      {report.destacado && (
-        <span className="featured-ribbon">
-          <Star /> Destacado
-        </span>
-      )}
       <div className="report-image">
+        {report.destacado && (
+          <span className="featured-ribbon">
+            <Star /> Destacado
+          </span>
+        )}
         {report.foto ? (
           <img
             src={report.foto}
@@ -373,13 +379,13 @@ function EmptyState({ adoption, onPublish }) {
 
 function Header({ view, onChange }) {
   const navigation = [
-    ["tablero", "Tablón", Search],
-    ["adopciones", "Adopciones", HeartHandshake],
-    ["publicar", "Publicar", Plus],
-    ["planes", "Planes", Sparkles],
-    ["cuenta", "Mi cuenta", Building2],
+    ["tablero", "Tablón"],
+    ["adopciones", "Adopciones"],
+    ["publicar", "Publicar"],
+    ["planes", "Planes"],
+    ["ayuda", "Ayuda"],
+    ["cuenta", "Mi cuenta"],
   ];
-  const active = navigation.find(([id]) => id === view)?.[1];
 
   return (
     <header className="site-header">
@@ -389,19 +395,18 @@ function Header({ view, onChange }) {
             <PawPrint />
           </span>
           <span>
-            <strong>Huellita</strong>
-            <small>Perdida</small>
+            Huellita <small>Perdida</small>
           </span>
         </button>
         <nav className="main-nav" aria-label="Navegación principal">
-          {navigation.map(([id, label, Icon]) => (
+          {navigation.map(([id, label]) => (
             <button
               key={id}
               className={view === id ? "is-active" : ""}
+              aria-current={view === id ? "page" : undefined}
               onClick={() => onChange(id)}
             >
-              <Icon />
-              <span>{label}</span>
+              {label}
             </button>
           ))}
         </nav>
@@ -409,13 +414,51 @@ function Header({ view, onChange }) {
           <span /> Red comunitaria activa
         </span>
       </div>
-      <div className="mobile-section-label">{active}</div>
     </header>
+  );
+}
+
+function ReunitedSection({ reports, adoption, onOpen }) {
+  const done = reports
+    .filter(
+      (report) =>
+        report.estado === "resuelto" &&
+        (adoption ? report.tipo === "adopcion" : report.tipo !== "adopcion"),
+    )
+    .sort((a, b) => b.fecha.localeCompare(a.fecha))
+    .slice(0, 3);
+
+  if (!done.length) return null;
+  return (
+    <section className="band band-alt" aria-labelledby="reunited-title">
+      <div className="page-wrap">
+        <div className="section-heading">
+          <div>
+            <h2 id="reunited-title">
+              {adoption ? "Ya encontraron familia" : "Ya volvieron a casa"}
+            </h2>
+            <p className="section-sub">
+              Reportes que la comunidad ayudó a cerrar con buenas noticias.
+            </p>
+          </div>
+        </div>
+        <div className="report-grid">
+          {done.map((report) => (
+            <ReportCard
+              key={report.id}
+              report={report}
+              onOpen={() => onOpen(report.id)}
+            />
+          ))}
+        </div>
+      </div>
+    </section>
   );
 }
 
 function ReportsView({
   reports,
+  allReports,
   adoption,
   search,
   setSearch,
@@ -427,113 +470,121 @@ function ReportsView({
   setOnlyActive,
   onOpen,
   onPublish,
+  onHelp,
 }) {
+  const typeOptions = [
+    ["todos", "Todos"],
+    ["perdido", "Perdidos"],
+    ["encontrado", "Encontrados"],
+  ];
+  const pool = allReports.filter((report) =>
+    adoption ? report.tipo === "adopcion" : report.tipo !== "adopcion",
+  );
+
   return (
-    <main className="page-wrap">
-      <section className="welcome-panel">
-        <div className="welcome-copy">
-          <span className="eyebrow">
-            <span /> Comunidad en todo México
-          </span>
-          <h1>
-            {adoption
-              ? "Un hogar puede empezar aquí."
-              : "Cada reporte acerca una huella a casa."}
-          </h1>
-          <p>
-            {adoption
-              ? "Conoce perros rescatados por refugios y personas comprometidas con la adopción responsable."
-              : "Publica, busca y comparte reportes claros de mascotas perdidas o encontradas en tu ciudad."}
-          </p>
-          <div className="welcome-actions">
-            <AppButton onClick={onPublish}>
-              <Megaphone /> Crear reporte
-            </AppButton>
-            <span>
-              <ShieldCheck /> Contacto protegido hasta que decidas verlo
-            </span>
+    <main>
+      <section className="hero">
+        <div className="page-wrap hero-grid">
+          <div className="hero-copy">
+            <h1>
+              {adoption
+                ? "Un hogar puede empezar aquí."
+                : "Cada reporte acerca una huella a casa."}
+            </h1>
+            <p>
+              {adoption
+                ? "Conoce perros rescatados por refugios y personas comprometidas con la adopción responsable."
+                : "Publica, busca y comparte reportes de mascotas perdidas o encontradas en tu ciudad, en todo México."}
+            </p>
+            <div className="hero-actions">
+              <AppButton onClick={onPublish}>
+                <Megaphone /> Crear reporte
+              </AppButton>
+              <button type="button" className="text-link" onClick={onHelp}>
+                Cómo funciona <ArrowRight />
+              </button>
+            </div>
+            <p className="hero-note">
+              <ShieldCheck /> Tu contacto se muestra solo si decides compartirlo
+            </p>
           </div>
-        </div>
-        <div className="welcome-art" aria-hidden="true">
-          <img src={heroImage} alt="" />
-          <span className="art-stamp">
-            <PawPrint /> Comunidad que ayuda
-          </span>
+          <div className="hero-art" aria-hidden="true">
+            <img src={heroImage} alt="" />
+          </div>
         </div>
       </section>
 
-      <section className="board-section">
-        <div className="section-heading">
-          <div>
-            <span className="section-kicker">Actualizado recientemente</span>
-            <h2>
+      <section className="board-section" aria-labelledby="board-title">
+        <div className="page-wrap">
+          <div className="section-heading">
+            <h2 id="board-title">
               {adoption ? "Buscan una familia" : "Reportes de la comunidad"}
             </h2>
+            <div className="summary-pills">
+              <span>
+                <strong>
+                  {pool.filter((report) => report.estado === "activo").length}
+                </strong>{" "}
+                activos
+              </span>
+              <span>
+                <strong>
+                  {pool.filter((report) => report.estado === "resuelto").length}
+                </strong>{" "}
+                historias felices
+              </span>
+            </div>
           </div>
-          <div className="summary-pills">
-            <span>
-              <strong>
-                {reports.filter((report) => report.estado === "activo").length}
-              </strong>{" "}
-              activos
-            </span>
-            <span>
-              <strong>
-                {reports.filter((report) => report.estado === "resuelto").length}
-              </strong>{" "}
-              historias felices
-            </span>
-          </div>
-        </div>
 
-        <div className="filter-bar">
-          <div className="search-box">
-            <Search />
-            <input
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-              placeholder="Nombre, color o descripción…"
-              aria-label="Buscar reportes"
-            />
-          </div>
-          {!adoption && (
+          <div className="filter-bar">
+            <div className="search-box">
+              <Search />
+              <input
+                type="search"
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+                placeholder="Nombre, color o descripción"
+                aria-label="Buscar reportes"
+              />
+            </div>
+            {!adoption && (
+              <div className="segmented" role="group" aria-label="Tipo de reporte">
+                {typeOptions.map(([value, label]) => (
+                  <button
+                    key={value}
+                    type="button"
+                    aria-pressed={type === value}
+                    onClick={() => setType(value)}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            )}
             <select
               className="filter-select"
-              value={type}
-              onChange={(event) => setType(event.target.value)}
-              aria-label="Filtrar por tipo"
+              value={city}
+              onChange={(event) => setCity(event.target.value)}
+              aria-label="Filtrar por ciudad"
             >
-              <option value="todos">Todos los reportes</option>
-              <option value="perdido">Mascotas perdidas</option>
-              <option value="encontrado">Mascotas encontradas</option>
+              <option value="todas">Todas las ciudades</option>
+              {CIUDADES.map((item) => (
+                <option key={item} value={item}>
+                  {item}
+                </option>
+              ))}
             </select>
-          )}
-          <select
-            className="filter-select"
-            value={city}
-            onChange={(event) => setCity(event.target.value)}
-            aria-label="Filtrar por ciudad"
-          >
-            <option value="todas">Todas las ciudades</option>
-            {CIUDADES.map((item) => (
-              <option key={item} value={item}>
-                {item}
-              </option>
-            ))}
-          </select>
-          <label className="active-switch">
-            <input
-              type="checkbox"
-              checked={onlyActive}
-              onChange={(event) => setOnlyActive(event.target.checked)}
-            />
-            <span className="switch-control" />
-            Solo activos
-          </label>
-        </div>
+            <label className="active-switch">
+              <input
+                type="checkbox"
+                checked={onlyActive}
+                onChange={(event) => setOnlyActive(event.target.checked)}
+              />
+              <span className="switch-control" />
+              Solo activos
+            </label>
+          </div>
 
-        <div className="cork-board">
-          <div className="board-tape" aria-hidden="true" />
           {reports.length ? (
             <div className="report-grid">
               {reports.map((report) => (
@@ -549,6 +600,13 @@ function ReportsView({
           )}
         </div>
       </section>
+
+      <ReunitedSection
+        reports={allReports}
+        adoption={adoption}
+        onOpen={onOpen}
+      />
+      <HowItWorks onPublish={onPublish} />
     </main>
   );
 }
@@ -591,9 +649,6 @@ function PublishView({ form, setForm, account, onSubmit, notify }) {
   return (
     <main className="page-wrap narrow-page">
       <div className="page-intro">
-        <span className="eyebrow">
-          <Megaphone /> Difunde información útil
-        </span>
         <h1>Publica un reporte claro y fácil de compartir.</h1>
         <p>
           Los campos marcados con * nos ayudan a mostrar la información más
@@ -639,21 +694,28 @@ function PublishView({ form, setForm, account, onSubmit, notify }) {
           </div>
         </div>
         <div className="photo-and-fields">
-          <button
-            type="button"
-            className="photo-picker"
-            onClick={() => fileInput.current?.click()}
-          >
-            {form.foto ? (
-              <img src={form.foto} alt="Vista previa de la mascota" />
-            ) : (
-              <>
-                <ImagePlus />
-                <strong>Subir foto</strong>
-                <small>JPG o PNG · máximo 5 MB</small>
-              </>
-            )}
-          </button>
+          <div className="photo-column">
+            <button
+              type="button"
+              className="photo-picker"
+              onClick={() => fileInput.current?.click()}
+            >
+              {form.foto ? (
+                <img src={form.foto} alt="Vista previa de la mascota" />
+              ) : (
+                <>
+                  <ImagePlus />
+                  <strong>Subir foto</strong>
+                  <small>JPG o PNG, máximo 5 MB</small>
+                </>
+              )}
+            </button>
+            <ul className="photo-tips">
+              <li>Usa luz natural y una foto reciente.</li>
+              <li>Muestra el rostro y el cuerpo completo.</li>
+              <li>Incluye el collar o las marcas que la distinguen.</li>
+            </ul>
+          </div>
           <input
             ref={fileInput}
             type="file"
@@ -851,9 +913,6 @@ function PlansView({
   return (
     <main className="page-wrap">
       <div className="page-intro centered-intro">
-        <span className="eyebrow">
-          <Sparkles /> Para refugios y negocios responsables
-        </span>
         <h1>Más alcance para quienes ayudan todos los días.</h1>
         <p>
           Reportar mascotas perdidas o encontradas siempre es gratis. Los
@@ -962,6 +1021,7 @@ function PlansView({
         <ShieldCheck /> El pago se procesa de forma segura. Huellita Perdida no
         almacena los datos de tu tarjeta.
       </p>
+      <PlanCompare plans={Object.values(PLAN_INFO).map((plan) => plan.nombre)} />
     </main>
   );
 }
@@ -989,7 +1049,6 @@ function AccountView({
           <Building2 />
         </div>
         <div className="account-title">
-          <span>Panel de organización</span>
           <h1>{account.nombreNegocio || "Tu refugio o negocio"}</h1>
           <p>
             Administra tus publicaciones de adopción y revisa el interés que
@@ -1089,7 +1148,6 @@ function AccountView({
       <section className="account-publications">
         <div className="section-heading">
           <div>
-            <span className="section-kicker">Tu actividad</span>
             <h2>Publicaciones de adopción</h2>
           </div>
           <div className="heading-actions">
@@ -1137,6 +1195,21 @@ function DetailModal({
   }, [onClose]);
 
   if (!report) return null;
+
+  function shareReport() {
+    const title = `${reportLabel(report)}: ${report.nombre || "mascota sin nombre"} en ${report.ciudad}`;
+    const url = window.location.origin + window.location.pathname;
+    if (navigator.share) {
+      navigator.share({ title, text: title, url }).catch(() => {});
+      return;
+    }
+    window.open(
+      `https://wa.me/?text=${encodeURIComponent(`${title}\n${url}`)}`,
+      "_blank",
+      "noopener,noreferrer",
+    );
+  }
+
   return (
     <div className="modal-overlay" role="presentation" onMouseDown={onClose}>
       <section
@@ -1249,6 +1322,9 @@ function DetailModal({
           )}
 
           <div className="dialog-actions">
+            <AppButton variant="outline" onClick={shareReport}>
+              <Share2 /> Compartir
+            </AppButton>
             {report.estado === "activo" && (
               <AppButton onClick={() => onResolve(report.id)}>
                 <CheckCircle2 />{" "}
@@ -1295,6 +1371,10 @@ function App() {
     window.clearTimeout(messageTimer.current);
     messageTimer.current = window.setTimeout(() => setMessage(null), 3500);
   }
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "instant" });
+  }, [view]);
 
   useEffect(() => {
     window.localStorage.setItem(STORAGE_REPORTS, JSON.stringify(reports));
@@ -1454,6 +1534,7 @@ function App() {
       {(view === "tablero" || view === "adopciones") && (
         <ReportsView
           reports={visibleReports}
+          allReports={reports}
           adoption={view === "adopciones"}
           search={search}
           setSearch={setSearch}
@@ -1470,6 +1551,7 @@ function App() {
             }
             setView("publicar");
           }}
+          onHelp={() => setView("ayuda")}
         />
       )}
       {view === "publicar" && (
@@ -1489,6 +1571,13 @@ function App() {
           loading={loadingPlan}
         />
       )}
+      {view === "ayuda" && (
+        <HelpView
+          cities={CIUDADES}
+          onPublish={() => setView("publicar")}
+          onPlans={() => setView("planes")}
+        />
+      )}
       {view === "cuenta" && (
         <AccountView
           account={account}
@@ -1503,16 +1592,7 @@ function App() {
         />
       )}
 
-      <footer className="site-footer">
-        <div>
-          <span className="brand-mark small">
-            <PawPrint />
-          </span>
-          <strong>Huellita Perdida</strong>
-        </div>
-        <p>Una red comunitaria para ayudar a las mascotas de México.</p>
-        <span>Hecho con cuidado para cada huella.</span>
-      </footer>
+      <SiteFooter onChange={setView} />
 
       <DetailModal
         key={selected?.id || "closed"}
