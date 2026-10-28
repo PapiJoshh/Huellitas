@@ -377,66 +377,214 @@ function EmptyState({ adoption, onPublish }) {
   );
 }
 
-function Header({ view, onChange }) {
-  const navigation = [
-    ["tablero", "Tablón"],
-    ["adopciones", "Adopciones"],
-    ["publicar", "Publicar"],
-    ["planes", "Planes"],
-    ["ayuda", "Ayuda"],
-    ["cuenta", "Mi cuenta"],
-  ];
+const NAV = [
+  ["inicio", "Inicio"],
+  ["reportes", "Reportes"],
+  ["adopciones", "Adopciones"],
+  ["publicar", "Publicar"],
+  ["planes", "Planes"],
+  ["ayuda", "Ayuda"],
+];
+
+// Cada sección con ancla y el enlace del menú que debe resaltarse.
+const SPY = {
+  inicio: "inicio",
+  reportes: "reportes",
+  adopciones: "adopciones",
+  historias: "adopciones",
+  "como-funciona": "publicar",
+  publicar: "publicar",
+  planes: "planes",
+  cuenta: "cuenta",
+  ayuda: "ayuda",
+};
+
+function goTo(id) {
+  const target = document.getElementById(id);
+  if (!target) return;
+  const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  target.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "start" });
+  window.history.replaceState(null, "", `#${id}`);
+}
+
+function useActiveSection() {
+  const [active, setActive] = useState("inicio");
+  useEffect(() => {
+    const elements = Object.keys(SPY)
+      .map((id) => document.getElementById(id))
+      .filter(Boolean);
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) setActive(SPY[entry.target.id]);
+        });
+      },
+      { rootMargin: "-45% 0px -50% 0px" },
+    );
+    elements.forEach((element) => observer.observe(element));
+    return () => observer.disconnect();
+  }, []);
+  return active;
+}
+
+function filterReports(reports, filters, adoption) {
+  const needle = filters.search.trim().toLocaleLowerCase("es-MX");
+  return reports
+    .filter((report) =>
+      adoption ? report.tipo === "adopcion" : report.tipo !== "adopcion",
+    )
+    .filter(
+      (report) =>
+        adoption || filters.type === "todos" || report.tipo === filters.type,
+    )
+    .filter(
+      (report) => filters.city === "todas" || report.ciudad === filters.city,
+    )
+    .filter((report) => !filters.onlyActive || report.estado === "activo")
+    .filter((report) => {
+      if (!needle) return true;
+      return [report.nombre, report.color, report.ciudad, report.descripcion]
+        .join(" ")
+        .toLocaleLowerCase("es-MX")
+        .includes(needle);
+    })
+    .sort(
+      (a, b) =>
+        Number(b.destacado) - Number(a.destacado) ||
+        b.fecha.localeCompare(a.fecha),
+    );
+}
+
+function Header() {
+  const active = useActiveSection();
 
   return (
     <header className="site-header">
       <div className="header-inner">
-        <button className="brand" onClick={() => onChange("tablero")}>
+        <a className="brand" href="#inicio" aria-label="Huellita Perdida, inicio">
           <span className="brand-mark">
             <PawPrint />
           </span>
           <span>
             Huellita <small>Perdida</small>
           </span>
-        </button>
-        <nav className="main-nav" aria-label="Navegación principal">
-          {navigation.map(([id, label]) => (
-            <button
+        </a>
+        <nav className="main-nav" aria-label="Secciones">
+          {NAV.map(([id, label]) => (
+            <a
               key={id}
-              className={view === id ? "is-active" : ""}
-              aria-current={view === id ? "page" : undefined}
-              onClick={() => onChange(id)}
+              href={`#${id}`}
+              className={active === id ? "is-active" : ""}
+              aria-current={active === id ? "true" : undefined}
             >
               {label}
-            </button>
+            </a>
           ))}
         </nav>
-        <span className="header-status">
-          <span /> Red comunitaria activa
-        </span>
+        <a
+          className={`btn btn-secondary header-cta ${active === "cuenta" ? "is-active" : ""}`}
+          href="#cuenta"
+        >
+          <Building2 /> Mi cuenta
+        </a>
       </div>
     </header>
   );
 }
 
-function ReunitedSection({ reports, adoption, onOpen }) {
+function HeroSection({ onPublish, onQuick }) {
+  const quick = [
+    {
+      id: "perdido",
+      tone: "lost",
+      icon: Search,
+      title: "Mascotas perdidas",
+      text: "Busca por ciudad y comparte el reporte.",
+    },
+    {
+      id: "encontrado",
+      tone: "found",
+      icon: MapPin,
+      title: "Mascotas encontradas",
+      text: "Quizá alguien ya la resguardó.",
+    },
+    {
+      id: "adopciones",
+      tone: "adopt",
+      icon: HeartHandshake,
+      title: "Adopciones",
+      text: "Perros que buscan una familia.",
+    },
+    {
+      id: "ayuda",
+      tone: "blue",
+      icon: Sparkles,
+      title: "Consejos",
+      text: "Qué hacer en las primeras horas.",
+    },
+  ];
+
+  return (
+    <section id="inicio" className="hero">
+      <div className="page-wrap hero-grid">
+        <div className="hero-copy">
+          <h1>Cada reporte acerca una huella a casa.</h1>
+          <p>
+            Publica, busca y comparte reportes de mascotas perdidas o
+            encontradas en tu ciudad, en todo México.
+          </p>
+          <div className="hero-actions">
+            <AppButton onClick={onPublish}>
+              <Megaphone /> Crear reporte
+            </AppButton>
+            <a className="text-link" href="#como-funciona">
+              Cómo funciona <ArrowRight />
+            </a>
+          </div>
+          <p className="hero-note">
+            <ShieldCheck /> Tu contacto se muestra solo si decides compartirlo
+          </p>
+        </div>
+        <div className="hero-art" aria-hidden="true">
+          <img src={heroImage} alt="" />
+        </div>
+      </div>
+      <div className="page-wrap">
+        <div className="quick-grid">
+          {quick.map(({ id, tone, icon: Icon, title, text }) => (
+            <button
+              key={id}
+              type="button"
+              className="quick-card"
+              onClick={() => onQuick(id)}
+            >
+              <span className={`guide-icon ${tone}`}>
+                <Icon />
+              </span>
+              <h3>{title}</h3>
+              <p>{text}</p>
+              <ArrowRight className="quick-arrow" />
+            </button>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function ReunitedSection({ reports, onOpen }) {
   const done = reports
-    .filter(
-      (report) =>
-        report.estado === "resuelto" &&
-        (adoption ? report.tipo === "adopcion" : report.tipo !== "adopcion"),
-    )
+    .filter((report) => report.estado === "resuelto")
     .sort((a, b) => b.fecha.localeCompare(a.fecha))
     .slice(0, 3);
 
   if (!done.length) return null;
   return (
-    <section className="band band-alt" aria-labelledby="reunited-title">
+    <section id="historias" className="band" aria-labelledby="reunited-title">
       <div className="page-wrap">
         <div className="section-heading">
           <div>
-            <h2 id="reunited-title">
-              {adoption ? "Ya encontraron familia" : "Ya volvieron a casa"}
-            </h2>
+            <h2 id="reunited-title">Ya volvieron a casa</h2>
             <p className="section-sub">
               Reportes que la comunidad ayudó a cerrar con buenas noticias.
             </p>
@@ -456,158 +604,114 @@ function ReunitedSection({ reports, adoption, onOpen }) {
   );
 }
 
-function ReportsView({
+function BoardSection({
+  id,
+  title,
+  subtitle,
+  adoption = false,
   reports,
-  allReports,
-  adoption,
-  search,
-  setSearch,
-  city,
-  setCity,
-  type,
-  setType,
-  onlyActive,
-  setOnlyActive,
+  pool,
+  filters,
+  onFilters,
   onOpen,
   onPublish,
-  onHelp,
 }) {
   const typeOptions = [
     ["todos", "Todos"],
     ["perdido", "Perdidos"],
     ["encontrado", "Encontrados"],
   ];
-  const pool = allReports.filter((report) =>
-    adoption ? report.tipo === "adopcion" : report.tipo !== "adopcion",
-  );
 
   return (
-    <main>
-      <section className="hero">
-        <div className="page-wrap hero-grid">
-          <div className="hero-copy">
-            <h1>
-              {adoption
-                ? "Un hogar puede empezar aquí."
-                : "Cada reporte acerca una huella a casa."}
-            </h1>
-            <p>
-              {adoption
-                ? "Conoce perros rescatados por refugios y personas comprometidas con la adopción responsable."
-                : "Publica, busca y comparte reportes de mascotas perdidas o encontradas en tu ciudad, en todo México."}
-            </p>
-            <div className="hero-actions">
-              <AppButton onClick={onPublish}>
-                <Megaphone /> Crear reporte
-              </AppButton>
-              <button type="button" className="text-link" onClick={onHelp}>
-                Cómo funciona <ArrowRight />
-              </button>
-            </div>
-            <p className="hero-note">
-              <ShieldCheck /> Tu contacto se muestra solo si decides compartirlo
-            </p>
+    <section id={id} className="band" aria-labelledby={`${id}-title`}>
+      <div className="page-wrap">
+        <div className="section-heading">
+          <div>
+            <h2 id={`${id}-title`}>{title}</h2>
+            <p className="section-sub">{subtitle}</p>
           </div>
-          <div className="hero-art" aria-hidden="true">
-            <img src={heroImage} alt="" />
+          <div className="summary-pills">
+            <span>
+              <strong>
+                {pool.filter((report) => report.estado === "activo").length}
+              </strong>{" "}
+              activos
+            </span>
+            <span>
+              <strong>
+                {pool.filter((report) => report.estado === "resuelto").length}
+              </strong>{" "}
+              historias felices
+            </span>
           </div>
         </div>
-      </section>
 
-      <section className="board-section" aria-labelledby="board-title">
-        <div className="page-wrap">
-          <div className="section-heading">
-            <h2 id="board-title">
-              {adoption ? "Buscan una familia" : "Reportes de la comunidad"}
-            </h2>
-            <div className="summary-pills">
-              <span>
-                <strong>
-                  {pool.filter((report) => report.estado === "activo").length}
-                </strong>{" "}
-                activos
-              </span>
-              <span>
-                <strong>
-                  {pool.filter((report) => report.estado === "resuelto").length}
-                </strong>{" "}
-                historias felices
-              </span>
-            </div>
+        <div className="filter-bar">
+          <div className="search-box">
+            <Search />
+            <input
+              type="search"
+              value={filters.search}
+              onChange={(event) => onFilters({ search: event.target.value })}
+              placeholder="Nombre, color o descripción"
+              aria-label={`Buscar en ${title.toLowerCase()}`}
+            />
           </div>
-
-          <div className="filter-bar">
-            <div className="search-box">
-              <Search />
-              <input
-                type="search"
-                value={search}
-                onChange={(event) => setSearch(event.target.value)}
-                placeholder="Nombre, color o descripción"
-                aria-label="Buscar reportes"
-              />
-            </div>
-            {!adoption && (
-              <div className="segmented" role="group" aria-label="Tipo de reporte">
-                {typeOptions.map(([value, label]) => (
-                  <button
-                    key={value}
-                    type="button"
-                    aria-pressed={type === value}
-                    onClick={() => setType(value)}
-                  >
-                    {label}
-                  </button>
-                ))}
-              </div>
-            )}
-            <select
-              className="filter-select"
-              value={city}
-              onChange={(event) => setCity(event.target.value)}
-              aria-label="Filtrar por ciudad"
-            >
-              <option value="todas">Todas las ciudades</option>
-              {CIUDADES.map((item) => (
-                <option key={item} value={item}>
-                  {item}
-                </option>
-              ))}
-            </select>
-            <label className="active-switch">
-              <input
-                type="checkbox"
-                checked={onlyActive}
-                onChange={(event) => setOnlyActive(event.target.checked)}
-              />
-              <span className="switch-control" />
-              Solo activos
-            </label>
-          </div>
-
-          {reports.length ? (
-            <div className="report-grid">
-              {reports.map((report) => (
-                <ReportCard
-                  key={report.id}
-                  report={report}
-                  onOpen={() => onOpen(report.id)}
-                />
+          {!adoption && (
+            <div className="segmented" role="group" aria-label="Tipo de reporte">
+              {typeOptions.map(([value, label]) => (
+                <button
+                  key={value}
+                  type="button"
+                  aria-pressed={filters.type === value}
+                  onClick={() => onFilters({ type: value })}
+                >
+                  {label}
+                </button>
               ))}
             </div>
-          ) : (
-            <EmptyState adoption={adoption} onPublish={onPublish} />
           )}
+          <select
+            className="filter-select"
+            value={filters.city}
+            onChange={(event) => onFilters({ city: event.target.value })}
+            aria-label="Filtrar por ciudad"
+          >
+            <option value="todas">Todas las ciudades</option>
+            {CIUDADES.map((item) => (
+              <option key={item} value={item}>
+                {item}
+              </option>
+            ))}
+          </select>
+          <label className="active-switch">
+            <input
+              type="checkbox"
+              checked={filters.onlyActive}
+              onChange={(event) =>
+                onFilters({ onlyActive: event.target.checked })
+              }
+            />
+            <span className="switch-control" />
+            Solo activos
+          </label>
         </div>
-      </section>
 
-      <ReunitedSection
-        reports={allReports}
-        adoption={adoption}
-        onOpen={onOpen}
-      />
-      <HowItWorks onPublish={onPublish} />
-    </main>
+        {reports.length ? (
+          <div className="report-grid">
+            {reports.map((report) => (
+              <ReportCard
+                key={report.id}
+                report={report}
+                onOpen={() => onOpen(report.id)}
+              />
+            ))}
+          </div>
+        ) : (
+          <EmptyState adoption={adoption} onPublish={onPublish} />
+        )}
+      </div>
+    </section>
   );
 }
 
@@ -647,9 +751,10 @@ function PublishView({ form, setForm, account, onSubmit, notify }) {
   }
 
   return (
-    <main className="page-wrap narrow-page">
+    <section id="publicar" className="band">
+    <div className="page-wrap narrow-page">
       <div className="page-intro">
-        <h1>Publica un reporte claro y fácil de compartir.</h1>
+        <h2>Publica un reporte claro y fácil de compartir.</h2>
         <p>
           Los campos marcados con * nos ayudan a mostrar la información más
           importante primero.
@@ -900,7 +1005,8 @@ function PublishView({ form, setForm, account, onSubmit, notify }) {
           <Megaphone /> Publicar en el tablón <ArrowRight />
         </AppButton>
       </form>
-    </main>
+    </div>
+    </section>
   );
 }
 
@@ -911,9 +1017,10 @@ function PlansView({
   loading,
 }) {
   return (
-    <main className="page-wrap">
+    <section id="planes" className="band">
+    <div className="page-wrap">
       <div className="page-intro centered-intro">
-        <h1>Más alcance para quienes ayudan todos los días.</h1>
+        <h2>Más alcance para quienes ayudan todos los días.</h2>
         <p>
           Reportar mascotas perdidas o encontradas siempre es gratis. Los
           planes apoyan la gestión de adopciones.
@@ -1022,7 +1129,8 @@ function PlansView({
         almacena los datos de tu tarjeta.
       </p>
       <PlanCompare plans={Object.values(PLAN_INFO).map((plan) => plan.nombre)} />
-    </main>
+    </div>
+    </section>
   );
 }
 
@@ -1043,13 +1151,14 @@ function AccountView({
   );
 
   return (
-    <main className="page-wrap">
+    <section id="cuenta" className="band">
+    <div className="page-wrap">
       <section className="account-hero">
         <div className="business-avatar">
           <Building2 />
         </div>
         <div className="account-title">
-          <h1>{account.nombreNegocio || "Tu refugio o negocio"}</h1>
+          <h2>{account.nombreNegocio || "Tu refugio o negocio"}</h2>
           <p>
             Administra tus publicaciones de adopción y revisa el interés que
             generan.
@@ -1173,7 +1282,8 @@ function AccountView({
           <EmptyState adoption onPublish={onPublish} />
         )}
       </section>
-    </main>
+    </div>
+    </section>
   );
 }
 
@@ -1352,15 +1462,22 @@ function DetailModal({
 }
 
 function App() {
-  const [view, setView] = useState("tablero");
   const [reports, setReports] = useState(loadReports);
   const [account, setAccount] = useState(loadAccount);
   const [form, setForm] = useState(emptyForm);
   const [selectedId, setSelectedId] = useState(null);
-  const [search, setSearch] = useState("");
-  const [city, setCity] = useState("todas");
-  const [type, setType] = useState("todos");
-  const [onlyActive, setOnlyActive] = useState(true);
+  const [reportFilters, setReportFilters] = useState({
+    search: "",
+    city: "todas",
+    type: "todos",
+    onlyActive: true,
+  });
+  const [adoptionFilters, setAdoptionFilters] = useState({
+    search: "",
+    city: "todas",
+    type: "todos",
+    onlyActive: true,
+  });
   const [loadingPlan, setLoadingPlan] = useState(null);
   const [message, setMessage] = useState(loadPaymentMessage);
   const messageTimer = useRef(null);
@@ -1371,10 +1488,6 @@ function App() {
     window.clearTimeout(messageTimer.current);
     messageTimer.current = window.setTimeout(() => setMessage(null), 3500);
   }
-
-  useEffect(() => {
-    window.scrollTo({ top: 0, behavior: "instant" });
-  }, [view]);
 
   useEffect(() => {
     window.localStorage.setItem(STORAGE_REPORTS, JSON.stringify(reports));
@@ -1397,41 +1510,29 @@ function App() {
         email: account.email || "",
       }).catch(() => {});
       window.history.replaceState({}, "", window.location.pathname);
+      window.setTimeout(() => goTo("cuenta"), 0);
     } else if (payment === "cancelled") {
       window.history.replaceState({}, "", window.location.pathname);
+      window.setTimeout(() => goTo("planes"), 0);
     }
   }, [account.email, account.nombreNegocio]);
 
-  const visibleReports = useMemo(() => {
-    const adoption = view === "adopciones";
-    return reports
-      .filter((report) =>
-        adoption ? report.tipo === "adopcion" : report.tipo !== "adopcion",
-      )
-      .filter(
-        (report) => adoption || type === "todos" || report.tipo === type,
-      )
-      .filter((report) => city === "todas" || report.ciudad === city)
-      .filter((report) => !onlyActive || report.estado === "activo")
-      .filter((report) => {
-        const needle = search.trim().toLocaleLowerCase("es-MX");
-        if (!needle) return true;
-        return [
-          report.nombre,
-          report.color,
-          report.ciudad,
-          report.descripcion,
-        ]
-          .join(" ")
-          .toLocaleLowerCase("es-MX")
-          .includes(needle);
-      })
-      .sort(
-        (a, b) =>
-          Number(b.destacado) - Number(a.destacado) ||
-          b.fecha.localeCompare(a.fecha),
-      );
-  }, [reports, view, type, city, onlyActive, search]);
+  const reportList = useMemo(
+    () => filterReports(reports, reportFilters, false),
+    [reports, reportFilters],
+  );
+  const adoptionList = useMemo(
+    () => filterReports(reports, adoptionFilters, true),
+    [reports, adoptionFilters],
+  );
+  const reportPool = useMemo(
+    () => reports.filter((report) => report.tipo !== "adopcion"),
+    [reports],
+  );
+  const adoptionPool = useMemo(
+    () => reports.filter((report) => report.tipo === "adopcion"),
+    [reports],
+  );
 
   const selected =
     reports.find((report) => report.id === selectedId) || null;
@@ -1467,7 +1568,7 @@ function App() {
           report.estado === "activo",
       ).length;
       if (activeMine >= PLAN_INFO[account.plan].limite) {
-        setView("planes");
+        goTo("planes");
         notify("Tu plan gratis permite hasta tres adopciones activas.", "info");
         return;
       }
@@ -1487,7 +1588,7 @@ function App() {
     };
     setReports((current) => [report, ...current]);
     setForm(emptyForm());
-    setView(form.tipo === "adopcion" ? "adopciones" : "tablero");
+    goTo(form.tipo === "adopcion" ? "adopciones" : "reportes");
     notify("Tu publicación ya está visible en el tablón.");
   }
 
@@ -1530,31 +1631,58 @@ function App() {
 
   return (
     <div className="app-shell">
-      <Header view={view} onChange={setView} />
-      {(view === "tablero" || view === "adopciones") && (
-        <ReportsView
-          reports={visibleReports}
-          allReports={reports}
-          adoption={view === "adopciones"}
-          search={search}
-          setSearch={setSearch}
-          city={city}
-          setCity={setCity}
-          type={type}
-          setType={setType}
-          onlyActive={onlyActive}
-          setOnlyActive={setOnlyActive}
+      <Header />
+      <main className="one-page">
+        <HeroSection
+          onPublish={() => goTo("publicar")}
+          onQuick={(id) => {
+            if (id === "perdido" || id === "encontrado") {
+              setReportFilters((current) => ({ ...current, type: id }));
+              goTo("reportes");
+            } else {
+              goTo(id);
+            }
+          }}
+        />
+        <BoardSection
+          id="reportes"
+          title="Reportes de la comunidad"
+          subtitle="Mascotas perdidas y encontradas, ordenadas de lo más reciente a lo más antiguo."
+          reports={reportList}
+          pool={reportPool}
+          filters={reportFilters}
+          onFilters={(patch) =>
+            setReportFilters((current) => ({ ...current, ...patch }))
+          }
           onOpen={openReport}
           onPublish={() => {
-            if (view === "adopciones") {
-              setForm((current) => ({ ...current, tipo: "adopcion" }));
-            }
-            setView("publicar");
+            setForm((current) =>
+              current.tipo === "adopcion"
+                ? { ...current, tipo: "perdido" }
+                : current,
+            );
+            goTo("publicar");
           }}
-          onHelp={() => setView("ayuda")}
         />
-      )}
-      {view === "publicar" && (
+        <BoardSection
+          id="adopciones"
+          title="Buscan una familia"
+          subtitle="Perros rescatados por refugios y personas comprometidas con la adopción responsable."
+          adoption
+          reports={adoptionList}
+          pool={adoptionPool}
+          filters={adoptionFilters}
+          onFilters={(patch) =>
+            setAdoptionFilters((current) => ({ ...current, ...patch }))
+          }
+          onOpen={openReport}
+          onPublish={() => {
+            setForm((current) => ({ ...current, tipo: "adopcion" }));
+            goTo("publicar");
+          }}
+        />
+        <ReunitedSection reports={reports} onOpen={openReport} />
+        <HowItWorks onPublish={() => goTo("publicar")} />
         <PublishView
           form={form}
           setForm={setForm}
@@ -1562,37 +1690,27 @@ function App() {
           onSubmit={submitReport}
           notify={notify}
         />
-      )}
-      {view === "planes" && (
         <PlansView
           account={account}
           setAccount={setAccount}
           onChoose={choosePlan}
           loading={loadingPlan}
         />
-      )}
-      {view === "ayuda" && (
-        <HelpView
-          cities={CIUDADES}
-          onPublish={() => setView("publicar")}
-          onPlans={() => setView("planes")}
-        />
-      )}
-      {view === "cuenta" && (
         <AccountView
           account={account}
           setAccount={setAccount}
           reports={reports}
           onPublish={() => {
             setForm((current) => ({ ...current, tipo: "adopcion" }));
-            setView("publicar");
+            goTo("publicar");
           }}
-          onPlans={() => setView("planes")}
+          onPlans={() => goTo("planes")}
           onOpen={openReport}
         />
-      )}
+        <HelpView cities={CIUDADES} />
+      </main>
 
-      <SiteFooter onChange={setView} />
+      <SiteFooter />
 
       <DetailModal
         key={selected?.id || "closed"}
