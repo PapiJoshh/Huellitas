@@ -74,7 +74,7 @@ const SAFETY = [
 
 export function HowItWorks({ onPublish }) {
   return (
-    <section className="band band-alt" aria-labelledby="how-title">
+    <section id="como-funciona" className="band" aria-labelledby="how-title">
       <div className="page-wrap">
         <div className="section-heading">
           <div>
@@ -156,7 +156,7 @@ export function PlanCompare({ plans }) {
   );
 }
 
-export function HelpView({ cities, onPublish, onPlans }) {
+export function HelpView({ cities }) {
   const faq = [
     [
       "¿Publicar una mascota perdida o encontrada cuesta algo?",
@@ -185,11 +185,11 @@ export function HelpView({ cities, onPublish, onPlans }) {
   ];
 
   return (
-    <main>
-      <section className="band" style={{ paddingBottom: "3rem" }}>
+    <>
+      <section id="ayuda" className="band" aria-labelledby="help-title">
         <div className="page-wrap">
           <div className="page-intro">
-            <h1>Ayuda y consejos</h1>
+            <h2 id="help-title">Ayuda y consejos</h2>
             <p>
               Qué hacer si perdiste, encontraste o quieres adoptar una mascota.
             </p>
@@ -215,8 +215,6 @@ export function HelpView({ cities, onPublish, onPlans }) {
         </div>
       </section>
 
-      <HowItWorks onPublish={onPublish} />
-
       <section className="band" aria-labelledby="safety-title">
         <div className="page-wrap safety">
           <div>
@@ -237,7 +235,7 @@ export function HelpView({ cities, onPublish, onPlans }) {
         </div>
       </section>
 
-      <section className="band band-alt" aria-labelledby="faq-title">
+      <section className="band" aria-labelledby="faq-title">
         <div className="page-wrap faq">
           <h2 id="faq-title">Preguntas frecuentes</h2>
           {faq.map(([question, answer]) => (
@@ -266,22 +264,20 @@ export function HelpView({ cities, onPublish, onPlans }) {
             >
               Enviar un comentario
             </a>
-            <button type="button" className="text-link" onClick={onPlans}>
+            <a className="text-link" href="#planes">
               Ver planes para refugios <ArrowRight />
-            </button>
+            </a>
           </div>
         </div>
       </section>
-    </main>
+    </>
   );
 }
 
-export function SiteFooter({ onChange }) {
+export function SiteFooter() {
   const link = (id, label) => (
     <li>
-      <button type="button" onClick={() => onChange(id)}>
-        {label}
-      </button>
+      <a href={`#${id}`}>{label}</a>
     </li>
   );
 
@@ -304,7 +300,7 @@ export function SiteFooter({ onChange }) {
           <nav className="footer-col" aria-label="Explorar">
             <h3>Explorar</h3>
             <ul>
-              {link("tablero", "Tablón")}
+              {link("reportes", "Reportes")}
               {link("adopciones", "Adopciones")}
               {link("publicar", "Publicar")}
             </ul>
@@ -320,7 +316,7 @@ export function SiteFooter({ onChange }) {
             <h3>Ayuda</h3>
             <ul>
               {link("ayuda", "Consejos")}
-              {link("ayuda", "Preguntas frecuentes")}
+              {link("como-funciona", "Cómo funciona")}
               <li>
                 <a href={ISSUES_URL} target="_blank" rel="noopener noreferrer">
                   Enviar un comentario
