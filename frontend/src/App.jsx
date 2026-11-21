@@ -26,7 +26,6 @@ import {
 } from "lucide-react";
 import {
   createCheckoutSession,
-  registerSuccessfulPayment,
 } from "./lib/payments";
 import {
   HelpView,
@@ -35,6 +34,20 @@ import {
   SiteFooter,
 } from "./sections.jsx";
 import heroImage from "./assets/huellita-hero.webp";
+import AuthPanel from "./AuthPanel";
+import { hasSupabase, supabase } from "./lib/supabase";
+import {
+  bumpView,
+  createReport,
+  fetchActivePlan,
+  fetchProfile,
+  fetchReports,
+  isAdoptionLimitError,
+  markResolved,
+  removeReport,
+  revealContact,
+  saveProfile,
+} from "./lib/data";
 
 const CIUDADES = [
   "Ciudad de México",
@@ -236,13 +249,15 @@ function loadReports() {
   }
 }
 
+const EMPTY_ACCOUNT = {
+  tipo: "particular",
+  nombreNegocio: "",
+  email: "",
+  plan: "gratis",
+};
+
 function loadAccount() {
-  const fallback = {
-    tipo: "particular",
-    nombreNegocio: "",
-    email: "",
-    plan: "gratis",
-  };
+  const fallback = EMPTY_ACCOUNT;
   try {
     const saved = window.localStorage.getItem(STORAGE_ACCOUNT);
     const account = saved ? { ...fallback, ...JSON.parse(saved) } : fallback;
@@ -455,7 +470,7 @@ function filterReports(reports, filters, adoption) {
     );
 }
 
-function Header() {
+function Header({ session, onLogin, onLogout }) {
   const active = useActiveSection();
 
   return (
@@ -487,6 +502,19 @@ function Header() {
         >
           <Building2 /> Mi cuenta
         </a>
+        {hasSupabase &&
+          (session ? (
+            <span className="header-user">
+              <small title={session.user.email}>{session.user.email}</small>
+              <button type="button" className="btn btn-secondary" onClick={onLogout}>
+                Salir
+              </button>
+            </span>
+          ) : (
+            <button type="button" className="btn btn-primary" onClick={onLogin}>
+              Iniciar sesión
+            </button>
+          ))}
       </div>
     </header>
   );
@@ -1293,8 +1321,10 @@ function DetailModal({
   onResolve,
   onDelete,
   onReveal,
+  canManage,
 }) {
-  const [revealed, setRevealed] = useState(false);
+  const [contact, setContact] = useState(null);
+  const [revealing, setRevealing] = useState(false);
 
   useEffect(() => {
     function closeOnEscape(event) {
@@ -1406,15 +1436,15 @@ function DetailModal({
             )}
           </div>
 
-          {revealed ? (
+          {contact ? (
             <a
               className="contact-revealed"
-              href={`tel:${report.contactoTelefono.replace(/\D/g, "")}`}
+              href={`tel:${contact.telefono.replace(/\D/g, "")}`}
             >
               <Phone />
               <span>
-                <small>Contacto: {report.contactoNombre}</small>
-                <strong>{report.contactoTelefono}</strong>
+                <small>Contacto: {contact.nombre}</small>
+                <strong>{contact.telefono}</strong>
               </span>
               <ArrowRight />
             </a>
@@ -1422,9 +1452,12 @@ function DetailModal({
             <AppButton
               variant="outline"
               className="reveal-contact"
-              onClick={() => {
-                setRevealed(true);
-                onReveal(report.id);
+              disabled={revealing}
+              onClick={async () => {
+                setRevealing(true);
+                const result = await onReveal(report.id);
+                setRevealing(false);
+                if (result) setContact(result);
               }}
             >
               <MessageCircle /> Ver datos de contacto
@@ -1435,7 +1468,7 @@ function DetailModal({
             <AppButton variant="outline" onClick={shareReport}>
               <Share2 /> Compartir
             </AppButton>
-            {report.estado === "activo" && (
+            {canManage && report.estado === "activo" && (
               <AppButton onClick={() => onResolve(report.id)}>
                 <CheckCircle2 />{" "}
                 {report.tipo === "adopcion"
@@ -1443,17 +1476,19 @@ function DetailModal({
                   : "Marcar como reunidos"}
               </AppButton>
             )}
-            <AppButton
-              variant="ghost"
-              className="delete-button"
-              onClick={() => {
-                if (window.confirm("¿Eliminar esta publicación?")) {
-                  onDelete(report.id);
-                }
-              }}
-            >
-              <Trash2 /> Eliminar
-            </AppButton>
+            {canManage && (
+              <AppButton
+                variant="ghost"
+                className="delete-button"
+                onClick={() => {
+                  if (window.confirm("¿Eliminar esta publicación?")) {
+                    onDelete(report.id);
+                  }
+                }}
+              >
+                <Trash2 /> Eliminar
+              </AppButton>
+            )}
           </div>
         </div>
       </section>
@@ -1462,8 +1497,18 @@ function DetailModal({
 }
 
 function App() {
-  const [reports, setReports] = useState(loadReports);
-  const [account, setAccount] = useState(loadAccount);
+  const [reports, setReports] = useState(hasSupabase ? [] : loadReports);
+  const [account, setAccount] = useState(
+    hasSupabase ? EMPTY_ACCOUNT : loadAccount,
+  );
+  const [session, setSession] = useState(null);
+  const [authOpen, setAuthOpen] = useState(false);
+  const profileReady = useRef(false);
+  const [paymentReturn, setPaymentReturn] = useState(() => {
+    const params = new URLSearchParams(window.location.search);
+    const plan = params.get("plan");
+    return params.get("payment") === "success" && PLAN_INFO[plan] ? plan : null;
+  });
   const [form, setForm] = useState(emptyForm);
   const [selectedId, setSelectedId] = useState(null);
   const [reportFilters, setReportFilters] = useState({
@@ -1489,13 +1534,80 @@ function App() {
     messageTimer.current = window.setTimeout(() => setMessage(null), 3500);
   }
 
+  const userId = session?.user?.id || null;
+
+  // Modo local (sin Supabase): todo se guarda en el navegador.
   useEffect(() => {
+    if (hasSupabase) return;
     window.localStorage.setItem(STORAGE_REPORTS, JSON.stringify(reports));
   }, [reports]);
 
   useEffect(() => {
+    if (hasSupabase) return;
     window.localStorage.setItem(STORAGE_ACCOUNT, JSON.stringify(account));
   }, [account]);
+
+  async function refreshReports() {
+    try {
+      setReports(await fetchReports());
+    } catch {
+      notify("No se pudieron cargar los reportes. Intenta de nuevo.", "error");
+    }
+  }
+
+  // Modo Supabase: sesión y reportes desde la base de datos.
+  useEffect(() => {
+    if (!hasSupabase) return undefined;
+    supabase.auth.getSession().then(({ data }) => setSession(data.session));
+    const { data } = supabase.auth.onAuthStateChange((_event, next) => {
+      setSession(next);
+      if (!next) setAccount(EMPTY_ACCOUNT);
+    });
+    fetchReports().then(setReports, () =>
+      notify("No se pudieron cargar los reportes. Intenta de nuevo.", "error"),
+    );
+    return () => data.subscription.unsubscribe();
+  }, []);
+
+  useEffect(() => {
+    if (!hasSupabase) return undefined;
+    profileReady.current = false;
+    if (!userId) return undefined;
+    let cancelled = false;
+    (async () => {
+      try {
+        const [profile, plan] = await Promise.all([
+          fetchProfile(userId),
+          fetchActivePlan(userId),
+        ]);
+        if (cancelled) return;
+        setAccount({
+          tipo: profile?.tipo || "particular",
+          nombreNegocio: profile?.nombre_negocio || "",
+          email: profile?.email || session.user.email || "",
+          plan,
+        });
+      } catch {
+        if (!cancelled) notify("No se pudo cargar tu perfil.", "error");
+      } finally {
+        if (!cancelled) profileReady.current = true;
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userId]);
+
+  // Guarda cambios del perfil (nombre del negocio / correo) con un pequeño retraso.
+  useEffect(() => {
+    if (!hasSupabase || !userId || !profileReady.current) return undefined;
+    const timer = window.setTimeout(() => {
+      saveProfile(userId, account).catch(() => {});
+    }, 800);
+    return () => window.clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userId, account.tipo, account.nombreNegocio, account.email]);
 
   useEffect(() => {
     if (paymentHandled.current) return;
@@ -1504,18 +1616,33 @@ function App() {
     const payment = params.get("payment");
     const plan = params.get("plan");
     if (payment === "success" && PLAN_INFO[plan]) {
-      registerSuccessfulPayment({
-        planId: plan,
-        businessName: account.nombreNegocio || "Negocio",
-        email: account.email || "",
-      }).catch(() => {});
+      // El plan lo activa el webhook firmado de Stripe; paymentReturn solo consulta el resultado.
       window.history.replaceState({}, "", window.location.pathname);
       window.setTimeout(() => goTo("cuenta"), 0);
     } else if (payment === "cancelled") {
       window.history.replaceState({}, "", window.location.pathname);
       window.setTimeout(() => goTo("planes"), 0);
     }
-  }, [account.email, account.nombreNegocio]);
+  }, []);
+
+  useEffect(() => {
+    if (!hasSupabase || !paymentReturn || !userId) return undefined;
+    let tries = 0;
+    const timer = window.setInterval(async () => {
+      tries += 1;
+      try {
+        const plan = await fetchActivePlan(userId);
+        if (plan !== "gratis") {
+          setAccount((current) => ({ ...current, tipo: "negocio", plan }));
+          setPaymentReturn(null);
+        }
+      } catch {
+        /* se reintenta */
+      }
+      if (tries >= 10) setPaymentReturn(null);
+    }, 3000);
+    return () => window.clearInterval(timer);
+  }, [paymentReturn, userId]);
 
   const reportList = useMemo(
     () => filterReports(reports, reportFilters, false),
@@ -1539,6 +1666,7 @@ function App() {
 
   function openReport(id) {
     setSelectedId(id);
+    if (hasSupabase) bumpView(id);
     setReports((current) =>
       current.map((report) =>
         report.id === id ? { ...report, vistas: report.vistas + 1 } : report,
@@ -1546,8 +1674,13 @@ function App() {
     );
   }
 
-  function submitReport(event) {
+  async function submitReport(event) {
     event.preventDefault();
+    if (hasSupabase && !session) {
+      setAuthOpen(true);
+      notify("Inicia sesión para publicar.", "info");
+      return;
+    }
     if (form.tipo !== "encontrado" && !form.nombre.trim()) {
       notify("Escribe el nombre de la mascota.", "error");
       return;
@@ -1564,7 +1697,9 @@ function App() {
       const activeMine = reports.filter(
         (report) =>
           report.tipo === "adopcion" &&
-          report.publicadoPor === account.nombreNegocio &&
+          (hasSupabase
+            ? report.userId === userId
+            : report.publicadoPor === account.nombreNegocio) &&
           report.estado === "activo",
       ).length;
       if (activeMine >= PLAN_INFO[account.plan].limite) {
@@ -1572,6 +1707,31 @@ function App() {
         notify("Tu plan gratis permite hasta tres adopciones activas.", "info");
         return;
       }
+    }
+
+    if (hasSupabase) {
+      try {
+        await createReport(form, {
+          userId,
+          publicadoPor:
+            form.tipo === "adopcion" && account.nombreNegocio
+              ? account.nombreNegocio
+              : null,
+          destacado: form.destacado && PLAN_INFO[account.plan].destacado,
+        });
+        await refreshReports();
+        setForm(emptyForm());
+        goTo(form.tipo === "adopcion" ? "adopciones" : "reportes");
+        notify("Tu publicación ya está visible en el tablón.");
+      } catch (error) {
+        if (isAdoptionLimitError(error)) {
+          goTo("planes");
+          notify("Tu plan gratis permite hasta tres adopciones activas.", "info");
+        } else {
+          notify("No se pudo publicar. Revisa los datos e inténtalo de nuevo.", "error");
+        }
+      }
+      return;
     }
 
     const report = {
@@ -1593,7 +1753,16 @@ function App() {
   }
 
   async function choosePlan(plan) {
+    if (hasSupabase && !session) {
+      setAuthOpen(true);
+      notify("Inicia sesión para contratar un plan.", "info");
+      return;
+    }
     if (plan === "gratis") {
+      if (hasSupabase) {
+        notify("Para cancelar tu suscripción usa el enlace de tu recibo de Stripe.", "info");
+        return;
+      }
       setAccount((current) => ({ ...current, plan }));
       notify("Cambiaste al plan gratis.");
       return;
@@ -1611,6 +1780,7 @@ function App() {
         planId: plan,
         businessName: account.nombreNegocio,
         email: account.email,
+        accessToken: session?.access_token,
       });
       if (result.demoMode) {
         setAccount((current) => ({
@@ -1631,7 +1801,11 @@ function App() {
 
   return (
     <div className="app-shell">
-      <Header />
+      <Header
+        session={session}
+        onLogin={() => setAuthOpen(true)}
+        onLogout={() => supabase.auth.signOut()}
+      />
       <main className="one-page">
         <HeroSection
           onPublish={() => goTo("publicar")}
@@ -1716,7 +1890,20 @@ function App() {
         key={selected?.id || "closed"}
         report={selected}
         onClose={() => setSelectedId(null)}
-        onResolve={(id) => {
+        canManage={
+          hasSupabase
+            ? Boolean(selected && userId && selected.userId === userId)
+            : true
+        }
+        onResolve={async (id) => {
+          if (hasSupabase) {
+            try {
+              await markResolved(id);
+            } catch {
+              notify("No se pudo actualizar la publicación.", "error");
+              return;
+            }
+          }
           setReports((current) =>
             current.map((report) =>
               report.id === id ? { ...report, estado: "resuelto" } : report,
@@ -1725,26 +1912,64 @@ function App() {
           setSelectedId(null);
           notify("¡Qué buena noticia! Actualizamos la publicación.");
         }}
-        onDelete={(id) => {
+        onDelete={async (id) => {
+          if (hasSupabase) {
+            try {
+              await removeReport(id);
+            } catch {
+              notify("No se pudo eliminar la publicación.", "error");
+              return;
+            }
+          }
           setReports((current) =>
             current.filter((report) => report.id !== id),
           );
           setSelectedId(null);
           notify("La publicación fue eliminada.");
         }}
-        onReveal={(id) =>
+        onReveal={async (id) => {
+          if (hasSupabase) {
+            try {
+              const result = await revealContact(id);
+              if (result) {
+                setReports((current) =>
+                  current.map((report) =>
+                    report.id === id
+                      ? { ...report, contactosRecibidos: report.contactosRecibidos + 1 }
+                      : report,
+                  ),
+                );
+              }
+              return result;
+            } catch {
+              notify("No se pudo obtener el contacto.", "error");
+              return null;
+            }
+          }
           setReports((current) =>
             current.map((report) =>
               report.id === id
-                ? {
-                    ...report,
-                    contactosRecibidos: report.contactosRecibidos + 1,
-                  }
+                ? { ...report, contactosRecibidos: report.contactosRecibidos + 1 }
                 : report,
             ),
-          )
-        }
+          );
+          const found = reports.find((report) => report.id === id);
+          return found
+            ? { nombre: found.contactoNombre, telefono: found.contactoTelefono }
+            : null;
+        }}
       />
+
+      {hasSupabase && (
+        <AuthPanel
+          open={authOpen}
+          onClose={() => setAuthOpen(false)}
+          onDone={(text) => {
+            setAuthOpen(false);
+            notify(text);
+          }}
+        />
+      )}
 
       {message && (
         <div className={`toast-message toast-${message.tone}`} role="status">

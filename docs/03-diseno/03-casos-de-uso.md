@@ -26,6 +26,7 @@
 | CU-08 | Contratar plan | Refugio o negocio |
 | CU-09 | Gestionar cuenta | Refugio o negocio |
 | CU-10 | Procesar pago | Stripe |
+| CU-11 | Iniciar sesión o registrarse | Persona usuaria, refugio |
 
 ## Especificación de los casos principales
 
@@ -34,9 +35,9 @@
 | Campo | Detalle |
 |---|---|
 | Actor | Persona usuaria |
-| Precondición | Ninguna. Reportar es gratuito y no requiere plan. |
+| Precondición | La persona inició sesión (CU-11). Reportar es gratuito y no requiere plan. |
 | Flujo principal | 1. La persona elige «Publicar» o «Crear reporte». 2. Selecciona el tipo: perdí, encontré o busco una familia. 3. Captura los datos de la mascota y, opcionalmente, sube una foto. 4. Captura nombre y teléfono de contacto. 5. Presiona «Publicar en el tablón». 6. El sistema agrega el reporte al tablón y muestra una confirmación. |
-| Flujo alterno | Si falta un campo obligatorio, el sistema lo señala y no publica. Si es adopción y el plan gratuito ya tiene tres activas, el sistema lleva a la persona a Planes. |
+| Flujo alterno | Si no hay sesión, el sistema abre el inicio de sesión. Si falta un campo obligatorio, el sistema lo señala y no publica. Si es adopción y el plan gratuito ya tiene tres activas, el sistema lleva a la persona a Planes. |
 | Postcondición | El reporte aparece en el tablón correspondiente con estado «activo». |
 
 ### CU-03 Ver datos de contacto
@@ -45,7 +46,7 @@
 |---|---|
 | Actor | Persona usuaria |
 | Precondición | Existe un reporte activo. |
-| Flujo principal | 1. La persona abre una tarjeta del tablón. 2. El sistema muestra el detalle sin el teléfono. 3. La persona elige «Ver contacto». 4. El sistema revela nombre y teléfono. |
+| Flujo principal | 1. La persona abre una tarjeta del tablón. 2. El sistema muestra el detalle sin el teléfono. 3. La persona elige «Ver contacto». 4. El sistema consulta la base de datos y revela nombre y teléfono. |
 | Postcondición | Se incrementa el contador de contactos de la publicación. |
 
 ### CU-05 Marcar como reunidos
@@ -53,17 +54,27 @@
 | Campo | Detalle |
 |---|---|
 | Actor | Persona usuaria |
-| Precondición | La persona abrió el detalle de su reporte. |
+| Precondición | La persona inició sesión y abrió el detalle de un reporte suyo. Solo quien publicó puede resolver o eliminar. |
 | Flujo principal | 1. Elige «Marcar como reunidos». 2. El sistema cambia el estado a «resuelto». 3. El reporte pasa a la sección «Ya volvieron a casa». |
 | Postcondición | El reporte deja de aparecer entre los activos. |
+
+### CU-11 Iniciar sesión o registrarse
+
+| Campo | Detalle |
+|---|---|
+| Actor | Persona usuaria o refugio |
+| Precondición | Ninguna. |
+| Flujo principal | 1. La persona elige «Iniciar sesión». 2. Captura correo y contraseña (mínimo 6 caracteres). 3. El sistema valida las credenciales con Supabase Auth. 4. La sesión queda activa y se carga su perfil y su plan. |
+| Flujo alterno | Si es la primera vez, elige «Regístrate» y el sistema crea la cuenta (puede pedir confirmar el correo). Si las credenciales son incorrectas, el sistema lo indica. |
+| Postcondición | La persona puede publicar, administrar sus reportes y contratar planes. |
 
 ### CU-08 Contratar plan
 
 | Campo | Detalle |
 |---|---|
 | Actor | Refugio o negocio |
-| Precondición | Capturó nombre del negocio y correo. |
-| Flujo principal | 1. Elige «Elegir plan» en Refugio Pro o Negocio Premium. 2. El sistema solicita una sesión de pago al servidor (CU-10). 3. La persona completa el pago en Stripe. 4. Stripe redirige al sitio. 5. El sistema activa el plan en la cuenta. |
+| Precondición | Inició sesión y capturó nombre del negocio y correo. |
+| Flujo principal | 1. Elige «Elegir plan» en Refugio Pro o Negocio Premium. 2. El sistema solicita una sesión de pago al servidor (CU-10). 3. La persona completa el pago en Stripe. 4. Stripe redirige al sitio. 5. El webhook activa el plan y el sistema lo consulta en la base de datos. |
 | Flujo alterno | Si el servidor no responde, el sistema avisa que debe reintentar. Si Stripe no está configurado, se activa el modo demostración. Si la persona cancela el pago, el plan no cambia. |
 | Postcondición | La cuenta muestra el plan contratado, la insignia de verificado y los destacados. |
 
@@ -72,5 +83,5 @@
 | Campo | Detalle |
 |---|---|
 | Actor | Stripe |
-| Flujo principal | 1. El servidor crea la sesión de Checkout con el plan y el monto en pesos mexicanos. 2. Stripe cobra y envía el evento «checkout.session.completed» al webhook. 3. El servidor valida la firma y guarda la suscripción en Supabase con estado «active». |
+| Flujo principal | 1. El servidor crea la sesión de Checkout con el plan y el monto en pesos mexicanos. 2. Stripe cobra y envía el evento «checkout.session.completed» al webhook. 3. El servidor valida la firma y guarda la suscripción, ligada a la cuenta, en Supabase con estado «active». |
 | Postcondición | La suscripción queda registrada en la base de datos. |

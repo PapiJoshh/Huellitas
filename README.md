@@ -58,11 +58,11 @@ Cuando una mascota se pierde, las primeras horas son decisivas, pero la difusió
 ```mermaid
 flowchart TB
     U["Navegador"] --> F["Frontend<br/>React 19 + Vite + Tailwind<br/>GitHub Pages"]
-    F <--> L[("localStorage<br/>reportes y cuenta")]
+    F <-->|"Auth, reportes y fotos (RLS)"| DB[("Supabase<br/>PostgreSQL + Auth + Storage")]
     F -->|"POST /api/create-checkout-session"| B["API REST<br/>Node.js + Express<br/>Render"]
     B --> SP["Stripe Checkout"]
     SP -->|"webhook checkout.session.completed"| B
-    B --> DB[("Supabase PostgreSQL<br/>tabla subscriptions")]
+    B -->|"service role: suscripciones"| DB
 ```
 
 | Capa | Tecnología |
@@ -70,7 +70,7 @@ flowchart TB
 | Interfaz | React 19, Vite 8, Tailwind CSS 3.4, Lucide |
 | Servidor | Node.js, Express 4 |
 | Pagos | Stripe Checkout |
-| Datos | Supabase (PostgreSQL con RLS) |
+| Datos y sesiones | Supabase (PostgreSQL con RLS, Auth y Storage) |
 | Despliegue | GitHub Pages (frontend, con GitHub Actions) y Render (API) |
 
 ## Inicio rápido
@@ -103,10 +103,20 @@ npm run dev
 | | `CLIENT_URL` | URL pública del frontend |
 | | `PORT` | Puerto de la API (3001 por defecto) |
 | `frontend/.env` | `VITE_API_URL` | URL pública de la API |
+| | `VITE_SUPABASE_URL` | URL del proyecto de Supabase |
+| | `VITE_SUPABASE_ANON_KEY` | Clave pública (anon); la protege RLS |
 
 > ⚠️ Nunca subas archivos `.env` ni claves secretas al repositorio.
 
-Para probar el pago en modo test de Stripe usa la tarjeta `4242 4242 4242 4242`, cualquier fecha futura y cualquier CVC. Ejecuta `backend/supabase/schema.sql` en el editor SQL de Supabase para crear la tabla de suscripciones.
+Para probar el pago en modo test de Stripe usa la tarjeta `4242 4242 4242 4242`, cualquier fecha futura y cualquier CVC. 
+
+#### Configurar Supabase (una vez)
+
+1. Crea un proyecto en [supabase.com](https://supabase.com) y ejecuta `backend/supabase/schema.sql` en el **SQL Editor**. Crea tablas, políticas RLS, funciones, el bucket `fotos` y 5 reportes de ejemplo.
+2. En **Authentication → Providers** deja activo *Email*. Para pruebas puedes desactivar *Confirm email*.
+3. Copia la URL y la clave *anon* a `frontend/.env` (o a los *secrets* `VITE_SUPABASE_URL` y `VITE_SUPABASE_ANON_KEY` de GitHub Actions) y la URL y la *service role* a las variables de Render.
+
+Sin estas variables la app funciona en **modo local**: los datos viven en el navegador y no hay inicio de sesión.
 
 ### Scripts
 
@@ -123,8 +133,7 @@ Para probar el pago en modo test de Stripe usa la tarjeta `4242 4242 4242 4242`,
 | Método | Ruta | Descripción |
 |---|---|---|
 | `GET` | `/api/health` | Estado del servidor y de los servicios configurados |
-| `POST` | `/api/create-checkout-session` | Crea la sesión de pago de un plan (`pro` o `premium`) |
-| `POST` | `/api/checkout/success` | Registra el éxito de pago desde el cliente |
+| `POST` | `/api/create-checkout-session` | Crea la sesión de pago de un plan (`pro` o `premium`); exige sesión de Supabase |
 | `POST` | `/api/webhook/stripe` | Webhook firmado de Stripe que activa la suscripción |
 
 ## Estructura del repositorio
@@ -132,7 +141,7 @@ Para probar el pago en modo test de Stripe usa la tarjeta `4242 4242 4242 4242`,
 ```text
 Huellitas/
 ├── frontend/              # React + Vite + Tailwind
-│   └── src/               #   App.jsx, sections.jsx, lib/payments.js
+│   └── src/               #   App.jsx, AuthPanel.jsx, lib/{supabase,data,payments}.js
 ├── backend/               # API Express
 │   ├── index.js
 │   └── supabase/schema.sql
@@ -166,12 +175,13 @@ Huellitas/
 
 ## Estado y hoja de ruta
 
-El prototipo es funcional de extremo a extremo para el flujo de reportes, adopciones y contratación de planes. Los reportes y la cuenta se guardan por ahora en el navegador.
+El prototipo es funcional de extremo a extremo para el flujo de reportes, adopciones y contratación de planes. Con Supabase configurado, las cuentas, los reportes y las fotos viven en la base de datos; sin configurarlo, la app funciona en modo local.
 
-- [ ] Inicio de sesión y reportes en base de datos compartida
-- [ ] Activación de planes solo desde el webhook firmado de Stripe
+- [x] Inicio de sesión y reportes en base de datos compartida
+- [x] Activación de planes solo desde el webhook firmado de Stripe
 - [ ] Moderación y verificación de refugios
-- [ ] Compartir por WhatsApp y notificaciones por correo
+- [x] Compartir por WhatsApp
+- [ ] Notificaciones por correo
 
 ## Equipo
 

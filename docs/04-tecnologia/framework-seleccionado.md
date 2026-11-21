@@ -41,8 +41,8 @@ Se seleccionó un **stack basado en frameworks de JavaScript** en lugar de un CM
 - **React:** componentes reutilizables (tarjetas, filtros, formularios) y manejo de estado para filtros, cuenta y publicaciones.
 - **Vite:** servidor de desarrollo con recarga instantánea, compilación optimizada y proxy hacia la API local.
 - **Tailwind CSS y CSS propio:** sistema de diseño consistente y adaptable a distintos tamaños de pantalla.
-- **Express:** rutas REST para crear la sesión de pago, registrar el éxito y recibir el webhook de Stripe.
-- **Supabase:** base de datos PostgreSQL con seguridad por filas y escritura exclusiva desde el servidor.
+- **Express:** rutas REST para crear la sesión de pago (verifica la sesión de la persona) y recibir el webhook firmado de Stripe.
+- **Supabase:** PostgreSQL con seguridad por filas (RLS), autenticación por correo y contraseña, almacenamiento de fotos y funciones que protegen el teléfono de contacto. Las suscripciones solo las escribe el servidor.
 - **GitHub Actions:** compilación y publicación automática del frontend con cada cambio en la rama principal.
 
 ## Arquitectura
@@ -51,6 +51,6 @@ Se seleccionó un **stack basado en frameworks de JavaScript** en lugar de un CM
 
 ## Limitaciones asumidas
 
-- Los reportes y la cuenta se guardan por ahora en el navegador (almacenamiento local). La persistencia compartida en base de datos es la mejora de mayor prioridad.
+- Si no se configuran las variables de Supabase, la app funciona en modo local (datos en el navegador y sin inicio de sesión). Es útil para demostraciones, pero no comparte datos entre personas.
 - El servidor gratuito de Render entra en reposo tras un periodo sin uso, por lo que la primera solicitud de pago puede tardar.
 - Frente a un CMS, el equipo debe construir por su cuenta la administración de contenido y la moderación.

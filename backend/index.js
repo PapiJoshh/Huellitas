@@ -21,6 +21,16 @@ app.get('/api/health', (req, res) => {
   res.json({ ok: true, services: { stripe: !!stripe, supabase: !!supabase } });
 });
 
+// Identifica al usuario a partir del token de sesión de Supabase (Authorization: Bearer ...).
+async function getUser(req) {
+  if (!supabase) return null;
+  const header = req.headers.authorization || '';
+  const token = header.startsWith('Bearer ') ? header.slice(7) : null;
+  if (!token) return null;
+  const { data, error } = await supabase.auth.getUser(token);
+  return error ? null : data.user;
+}
+
 app.post('/api/create-checkout-session', async (req, res) => {
   const { planId, businessName, email } = req.body || {};
   const prices = { pro: 24900, premium: 49900 };
@@ -31,9 +41,14 @@ app.post('/api/create-checkout-session', async (req, res) => {
     return res.json({
       ok: true,
       demoMode: true,
-      checkoutUrl: `/demo-payment?plan=${planId}`,
       message: 'Modo demo activo. Configura Stripe para pagos reales.',
     });
+  }
+
+  // Con base de datos configurada, el pago se asocia a una cuenta verificada.
+  const user = await getUser(req);
+  if (supabase && !user) {
+    return res.status(401).json({ error: 'Inicia sesión para contratar un plan.' });
   }
 
   try {
@@ -49,8 +64,13 @@ app.post('/api/create-checkout-session', async (req, res) => {
       }],
       success_url: `${process.env.CLIENT_URL}/?payment=success&plan=${planId}`,
       cancel_url: `${process.env.CLIENT_URL}/?payment=cancelled&plan=${planId}`,
-      customer_email: email || undefined,
-      metadata: { planId, businessName: businessName || '', email: email || '' },
+      customer_email: user?.email || email || undefined,
+      metadata: {
+        planId,
+        businessName: businessName || '',
+        email: email || '',
+        userId: user?.id || '',
+      },
     });
     res.json({ ok: true, checkoutUrl: session.url });
   } catch (error) {
@@ -58,35 +78,25 @@ app.post('/api/create-checkout-session', async (req, res) => {
   }
 });
 
-app.post('/api/checkout/success', async (req, res) => {
-  const { planId, businessName, email } = req.body || {};
-  if (!['pro', 'premium'].includes(planId)) return res.status(400).json({ error: 'Plan inválido.' });
-
-  if (supabase) {
-    const { error } = await supabase.from('subscriptions').insert({
-      plan_id: planId,
-      business_name: businessName || 'Sin nombre',
-      email: email || null,
-      status: 'active',
-    });
-    if (error) console.error('Supabase insert error:', error.message);
-  }
-  res.json({ ok: true, message: 'Pago registrado correctamente.' });
-});
-
+// El plan solo se activa aquí: Stripe firma el evento y el usuario viene de la sesión verificada.
 app.post('/api/webhook/stripe', async (req, res) => {
   if (!stripe || !process.env.STRIPE_WEBHOOK_SECRET) return res.json({ received: true, demo: true });
   try {
     const event = stripe.webhooks.constructEvent(req.body, req.headers['stripe-signature'], process.env.STRIPE_WEBHOOK_SECRET);
     if (event.type === 'checkout.session.completed' && supabase) {
       const session = event.data.object;
-      await supabase.from('subscriptions').upsert({
+      const { error } = await supabase.from('subscriptions').upsert({
         stripe_session_id: session.id,
+        user_id: session.metadata.userId || null,
         plan_id: session.metadata.planId,
         business_name: session.metadata.businessName || 'Sin nombre',
         email: session.customer_email || session.metadata.email || null,
         status: 'active',
-      });
+      }, { onConflict: 'stripe_session_id' });
+      if (error) {
+        console.error('Supabase upsert error:', error.message);
+        return res.status(500).send('No se pudo registrar la suscripción.');
+      }
     }
     res.json({ received: true });
   } catch (error) {

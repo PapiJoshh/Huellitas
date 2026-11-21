@@ -1,10 +1,7 @@
-const API_BASE = 'https://huellitas-fpng.onrender.com';
+const API_BASE =
+  import.meta.env.VITE_API_URL || 'https://huellitas-fpng.onrender.com';
 
 async function request(path, options) {
-  if (!API_BASE) {
-    throw new Error('Falta configurar VITE_API_URL con la URL pública de Render.');
-  }
-
   try {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 20000);
@@ -19,10 +16,13 @@ async function request(path, options) {
   }
 }
 
-export async function createCheckoutSession({ planId, businessName, email }) {
+export async function createCheckoutSession({ planId, businessName, email, accessToken }) {
+  const headers = { 'Content-Type': 'application/json' };
+  if (accessToken) headers.Authorization = `Bearer ${accessToken}`;
+
   const response = await request('/api/create-checkout-session', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers,
     body: JSON.stringify({ planId, businessName, email }),
   });
 
@@ -30,22 +30,6 @@ export async function createCheckoutSession({ planId, businessName, email }) {
 
   if (!response.ok) {
     throw new Error(data.error || 'No se pudo iniciar el pago.');
-  }
-
-  return data;
-}
-
-export async function registerSuccessfulPayment({ planId, businessName, email }) {
-  const response = await request('/api/checkout/success', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ planId, businessName, email }),
-  });
-
-  const data = await response.json().catch(() => ({}));
-
-  if (!response.ok) {
-    throw new Error(data.error || 'No se pudo registrar el pago.');
   }
 
   return data;

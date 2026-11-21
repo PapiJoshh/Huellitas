@@ -29,9 +29,8 @@ La decisión de usar un framework en lugar de un CMS se sostiene en la naturalez
 
 | Prioridad | Mejora |
 |---|---|
-| Alta | Inicio de sesión y almacenamiento de reportes en base de datos compartida (hoy se guardan en el navegador). |
-| Alta | Activar los planes únicamente desde el webhook firmado de Stripe. El servidor aún expone una ruta de registro de éxito que no verifica el pago. |
+| Alta | Desplegar y probar de punta a punta el proyecto de Supabase en producción (el esquema y el código están listos; falta configurar las variables en el despliegue). |
 | Media | Moderación de reportes y verificación formal de refugios. |
-| Media | Compartir por WhatsApp y notificaciones por correo. |
+| Media | Notificaciones por correo ante nuevos reportes en la ciudad. |
 | Baja | Estadísticas de vistas para cuentas con plan de pago. |
 | Baja | Pruebas automatizadas más allá de la prueba de humo existente (`npm run test:gold`). |

@@ -21,13 +21,14 @@ Desarrollar una aplicación web que centralice reportes de mascotas perdidas, en
 - Formulario de publicación en tres pasos.
 - Ventana de detalle con contacto bajo demanda y opción de marcar como resuelto.
 - Planes Gratis, Refugio Pro y Negocio Premium con pago en Stripe Checkout.
-- Registro de suscripciones en Supabase.
+- Registro de suscripciones en Supabase, activadas solo desde el webhook firmado de Stripe.
+- Inicio de sesión con correo y contraseña (Supabase Auth) y reportes guardados en base de datos compartida.
+- Compartir reportes por WhatsApp.
 - Sección de ayuda con guías de seguridad y preguntas frecuentes.
 
 **No incluye en esta etapa:**
 
-- Inicio de sesión con cuentas de usuario y persistencia de reportes en base de datos.
-- Notificaciones por correo o por WhatsApp.
+- Notificaciones por correo.
 - Moderación de contenido y verificación formal de refugios.
 - Aplicación móvil nativa.
 

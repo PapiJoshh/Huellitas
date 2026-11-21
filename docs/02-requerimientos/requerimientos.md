@@ -20,8 +20,8 @@ Los requerimientos se clasifican por tipo y se indica su estado actual en el pro
 | RF-12 | El sistema debe permitir configurar el perfil de la cuenta (tipo, nombre del negocio y correo) y listar sus publicaciones de adopción. | Media | Implementado |
 | RF-13 | El sistema debe ofrecer estadísticas de interés por publicación. Hoy se registra el número de contactos recibidos; las vistas y su visualización están pendientes. | Baja | Parcial |
 | RF-14 | El sistema debe ofrecer guías de ayuda, recomendaciones de seguridad y preguntas frecuentes. | Media | Implementado |
-| RF-15 | El sistema debe contar con inicio de sesión y guardar los reportes en una base de datos compartida. | Alta | Planeado |
-| RF-16 | El sistema debe permitir compartir un reporte por WhatsApp. | Media | Planeado |
+| RF-15 | El sistema debe contar con inicio de sesión y guardar los reportes en una base de datos compartida. | Alta | Implementado (requiere configurar Supabase) |
+| RF-16 | El sistema debe permitir compartir un reporte por WhatsApp. | Media | Implementado |
 | RF-17 | El sistema debe enviar notificaciones por correo ante nuevos reportes en la ciudad de la persona. | Baja | Planeado |
 | RF-18 | El sistema debe contar con moderación de reportes y verificación formal de refugios. | Media | Planeado |
 
