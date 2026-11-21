@@ -8,6 +8,7 @@ import {
   Search,
   ShieldCheck,
 } from "lucide-react";
+import LogoMark from "./LogoMark";
 
 const STEPS = [
   {
@@ -284,9 +285,7 @@ export function SiteFooter({ onFeedback, onLegal }) {
         <div className="footer-top">
           <div>
             <div className="footer-brand">
-              <span className="brand-mark small">
-                <PawPrint />
-              </span>
+              <LogoMark size={28} className="brand-logo" />
               Huellita Perdida
             </div>
             <p>

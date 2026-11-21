@@ -1,0 +1,31 @@
+import { useId } from "react";
+
+// Logo de Huellita Perdida: huella con corazón sobre fondo azul.
+export default function LogoMark({ size = 32, className = "" }) {
+  const id = useId().replace(/:/g, "");
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 64 64"
+      width={size}
+      height={size}
+      className={className}
+      aria-hidden="true"
+    >
+      <defs>
+        <linearGradient id={`hp-${id}`} x1="8" y1="4" x2="56" y2="60" gradientUnits="userSpaceOnUse">
+          <stop offset="0" stopColor="#3aa0ff" />
+          <stop offset="1" stopColor="#0a5fd6" />
+        </linearGradient>
+      </defs>
+      <rect width="64" height="64" rx="16" fill={`url(#hp-${id})`} />
+      <g fill="#fff">
+        <ellipse cx="14.5" cy="30" rx="5" ry="6.6" transform="rotate(-24 14.5 30)" />
+        <ellipse cx="25" cy="18.5" rx="5.2" ry="7" transform="rotate(-8 25 18.5)" />
+        <ellipse cx="39" cy="18.5" rx="5.2" ry="7" transform="rotate(8 39 18.5)" />
+        <ellipse cx="49.5" cy="30" rx="5" ry="6.6" transform="rotate(24 49.5 30)" />
+        <path d="M32 54c-13-8.4-15.4-16-10.4-20 4-3.2 8.2-1.4 10.4 2.2 2.2-3.6 6.4-5.4 10.4-2.2 5 4 2.6 11.6-10.4 20z" />
+      </g>
+    </svg>
+  );
+}

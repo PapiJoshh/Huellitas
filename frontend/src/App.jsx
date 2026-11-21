@@ -39,6 +39,7 @@ import heroImage from "./assets/huellita-hero.webp";
 import AuthPanel from "./AuthPanel";
 import FeedbackDialog from "./FeedbackDialog";
 import LegalDialog from "./LegalDialog";
+import LogoMark from "./LogoMark";
 import { hasSupabase, supabase } from "./lib/supabase";
 import {
   bumpView,
@@ -481,9 +482,7 @@ function Header({ session, onLogin, onLogout }) {
     <header className="site-header">
       <div className="header-inner">
         <a className="brand" href="#inicio" aria-label="Huellita Perdida, inicio">
-          <span className="brand-mark">
-            <PawPrint />
-          </span>
+          <LogoMark size={32} className="brand-logo" />
           <span>
             Huellita <small>Perdida</small>
           </span>

@@ -2706,3 +2706,9 @@ main.page-wrap {
 .skip-link:focus {
   top: 0.75rem;
 }
+
+.brand-logo {
+  flex-shrink: 0;
+  border-radius: 9px;
+  box-shadow: 0 2px 8px rgba(10, 95, 214, 0.25);
+}
