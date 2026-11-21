@@ -109,7 +109,6 @@ npm run dev
 | | `VITE_SUPABASE_URL` | URL del proyecto de Supabase |
 | | `VITE_SUPABASE_ANON_KEY` | Clave pública (anon); la protege RLS |
 
-> ⚠️ Nunca subas archivos `.env` ni claves secretas al repositorio.
 
 Para probar el pago en modo test de Stripe usa la tarjeta `4242 4242 4242 4242`, cualquier fecha futura y cualquier CVC. 
 
