@@ -150,3 +150,23 @@ export async function fetchActivePlan(userId) {
   if (error) throw error;
   return data?.[0]?.plan_id || "gratis";
 }
+
+export async function sendFeedback({ tipo, mensaje, contacto, reportId }) {
+  const row = {
+    tipo,
+    mensaje: mensaje.trim(),
+    contacto: (contacto || "").trim(),
+    report_id: reportId || null,
+    pagina: window.location.pathname + window.location.hash,
+  };
+  if (supabase) {
+    const { error } = await supabase.from("feedback").insert(row);
+    if (error) throw error;
+    return;
+  }
+  // Modo local: se guarda en el navegador para no perder el mensaje.
+  const key = "huellita-perdida-feedback";
+  const saved = JSON.parse(window.localStorage.getItem(key) || "[]");
+  saved.push({ ...row, fecha: new Date().toISOString() });
+  window.localStorage.setItem(key, JSON.stringify(saved));
+}

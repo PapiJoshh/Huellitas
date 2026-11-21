@@ -242,6 +242,27 @@ create policy "fotos: subir en carpeta propia" on storage.objects
   with check (bucket_id = 'fotos' and (storage.foldername(name))[1] = auth.uid()::text);
 
 -- ---------------------------------------------------------------------
+--  7. Comentarios y denuncias (cualquier persona puede enviar; nadie los lee desde la web)
+-- ---------------------------------------------------------------------
+create table if not exists public.feedback (
+  id         uuid primary key default gen_random_uuid(),
+  tipo       text not null check (tipo in ('problema', 'idea', 'publicacion')),
+  mensaje    text not null check (char_length(mensaje) between 5 and 1000),
+  contacto   text not null default '' check (char_length(contacto) <= 120),
+  report_id  uuid references public.reports(id) on delete set null,
+  pagina     text not null default '' check (char_length(pagina) <= 200),
+  created_at timestamptz not null default now()
+);
+
+alter table public.feedback enable row level security;
+revoke all on public.feedback from anon, authenticated;
+grant insert (tipo, mensaje, contacto, report_id, pagina) on public.feedback to anon, authenticated;
+
+drop policy if exists "feedback: enviar" on public.feedback;
+create policy "feedback: enviar" on public.feedback
+  for insert to anon, authenticated with check (true);
+
+-- ---------------------------------------------------------------------
 --  6. Datos de ejemplo (opcional; se pueden borrar desde el panel)
 -- ---------------------------------------------------------------------
 insert into public.reports (id, tipo, nombre, color, tamano, ciudad, fecha, descripcion,

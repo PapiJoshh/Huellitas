@@ -9,8 +9,6 @@ import {
   ShieldCheck,
 } from "lucide-react";
 
-const ISSUES_URL = "https://github.com/PapiJoshh/Huellitas/issues";
-
 const STEPS = [
   {
     title: "Publica",
@@ -156,7 +154,7 @@ export function PlanCompare({ plans }) {
   );
 }
 
-export function HelpView({ cities }) {
+export function HelpView({ cities, onFeedback }) {
   const faq = [
     [
       "¿Publicar una mascota perdida o encontrada cuesta algo?",
@@ -256,14 +254,13 @@ export function HelpView({ cities }) {
             vuelvan a casa.
           </p>
           <div className="hero-actions" style={{ justifyContent: "center" }}>
-            <a
+            <button
+              type="button"
               className="btn btn-primary"
-              href={ISSUES_URL}
-              target="_blank"
-              rel="noopener noreferrer"
+              onClick={() => onFeedback({ tipo: "problema" })}
             >
-              Enviar un comentario
-            </a>
+              Reportar un problema o enviar una idea
+            </button>
             <a className="text-link" href="#planes">
               Ver planes para refugios <ArrowRight />
             </a>
@@ -274,7 +271,7 @@ export function HelpView({ cities }) {
   );
 }
 
-export function SiteFooter() {
+export function SiteFooter({ onFeedback }) {
   const link = (id, label) => (
     <li>
       <a href={`#${id}`}>{label}</a>
@@ -318,9 +315,13 @@ export function SiteFooter() {
               {link("ayuda", "Consejos")}
               {link("como-funciona", "Cómo funciona")}
               <li>
-                <a href={ISSUES_URL} target="_blank" rel="noopener noreferrer">
-                  Enviar un comentario
-                </a>
+                <button
+                  type="button"
+                  className="footer-link-button"
+                  onClick={() => onFeedback({ tipo: "problema" })}
+                >
+                  Reportar un problema
+                </button>
               </li>
             </ul>
           </nav>

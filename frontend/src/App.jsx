@@ -7,8 +7,10 @@ import {
   Check,
   CheckCircle2,
   Eye,
+  Flag,
   HeartHandshake,
   ImagePlus,
+  Lock,
   MapPin,
   Megaphone,
   MessageCircle,
@@ -35,6 +37,7 @@ import {
 } from "./sections.jsx";
 import heroImage from "./assets/huellita-hero.webp";
 import AuthPanel from "./AuthPanel";
+import FeedbackDialog from "./FeedbackDialog";
 import { hasSupabase, supabase } from "./lib/supabase";
 import {
   bumpView,
@@ -496,25 +499,35 @@ function Header({ session, onLogin, onLogout }) {
             </a>
           ))}
         </nav>
-        <a
-          className={`btn btn-secondary header-cta ${active === "cuenta" ? "is-active" : ""}`}
-          href="#cuenta"
-        >
-          <Building2 /> Mi cuenta
-        </a>
-        {hasSupabase &&
-          (session ? (
-            <span className="header-user">
-              <small title={session.user.email}>{session.user.email}</small>
-              <button type="button" className="btn btn-secondary" onClick={onLogout}>
-                Salir
+        <div className="header-actions">
+          <a
+            className={`btn btn-secondary header-cta ${active === "cuenta" ? "is-active" : ""}`}
+            href="#cuenta"
+          >
+            <Building2 /> Mi cuenta
+          </a>
+          {hasSupabase &&
+            (session ? (
+              <span className="header-user">
+                <small title={session.user.email}>{session.user.email}</small>
+                <button
+                  type="button"
+                  className="btn btn-secondary header-cta"
+                  onClick={onLogout}
+                >
+                  Salir
+                </button>
+              </span>
+            ) : (
+              <button
+                type="button"
+                className="btn btn-primary header-cta"
+                onClick={onLogin}
+              >
+                Iniciar sesión
               </button>
-            </span>
-          ) : (
-            <button type="button" className="btn btn-primary" onClick={onLogin}>
-              Iniciar sesión
-            </button>
-          ))}
+            ))}
+        </div>
       </div>
     </header>
   );
@@ -758,7 +771,24 @@ function SelectField({ label, value, options, onChange }) {
   );
 }
 
-function PublishView({ form, setForm, account, onSubmit, notify }) {
+function AuthGate({ id, title, text, onLogin }) {
+  return (
+    <section id={id} className="band">
+      <div className="page-wrap narrow-page">
+        <div className="auth-gate">
+          <Lock aria-hidden="true" />
+          <h2 style={{ fontSize: "1.75rem" }}>{title}</h2>
+          <p>{text}</p>
+          <div className="gate-actions">
+            <AppButton onClick={onLogin}>Iniciar sesión o crear cuenta</AppButton>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function PublishView({ form, setForm, account, onSubmit, notify, locked, onLogin }) {
   const fileInput = useRef(null);
   const plan = PLAN_INFO[account.plan];
 
@@ -776,6 +806,17 @@ function PublishView({ form, setForm, account, onSubmit, notify }) {
     reader.onload = () =>
       setForm((current) => ({ ...current, foto: String(reader.result) }));
     reader.readAsDataURL(file);
+  }
+
+  if (locked) {
+    return (
+      <AuthGate
+        id="publicar"
+        title="Inicia sesión para publicar"
+        text="Para publicar un reporte o una adopción necesitas una cuenta gratuita. Así puedes administrar tus publicaciones y marcarlas como resueltas."
+        onLogin={onLogin}
+      />
+    );
   }
 
   return (
@@ -1163,6 +1204,8 @@ function PlansView({
 }
 
 function AccountView({
+  locked,
+  onLogin,
   account,
   setAccount,
   reports,
@@ -1177,6 +1220,17 @@ function AccountView({
       report.publicadoPor === account.nombreNegocio &&
       Boolean(account.nombreNegocio),
   );
+
+  if (locked) {
+    return (
+      <AuthGate
+        id="cuenta"
+        title="Inicia sesión para ver tu cuenta"
+        text="Aquí administras tu perfil, tus publicaciones de adopción y tu plan."
+        onLogin={onLogin}
+      />
+    );
+  }
 
   return (
     <section id="cuenta" className="band">
@@ -1321,6 +1375,7 @@ function DetailModal({
   onResolve,
   onDelete,
   onReveal,
+  onReport,
   canManage,
 }) {
   const [contact, setContact] = useState(null);
@@ -1468,6 +1523,14 @@ function DetailModal({
             <AppButton variant="outline" onClick={shareReport}>
               <Share2 /> Compartir
             </AppButton>
+            {!canManage && (
+              <AppButton
+                variant="ghost"
+                onClick={() => onReport(report.id)}
+              >
+                <Flag /> Denunciar
+              </AppButton>
+            )}
             {canManage && report.estado === "activo" && (
               <AppButton onClick={() => onResolve(report.id)}>
                 <CheckCircle2 />{" "}
@@ -1503,6 +1566,7 @@ function App() {
   );
   const [session, setSession] = useState(null);
   const [authOpen, setAuthOpen] = useState(false);
+  const [feedback, setFeedback] = useState(null);
   const profileReady = useRef(false);
   const [paymentReturn, setPaymentReturn] = useState(() => {
     const params = new URLSearchParams(window.location.search);
@@ -1858,6 +1922,8 @@ function App() {
         <ReunitedSection reports={reports} onOpen={openReport} />
         <HowItWorks onPublish={() => goTo("publicar")} />
         <PublishView
+          locked={hasSupabase && !session}
+          onLogin={() => setAuthOpen(true)}
           form={form}
           setForm={setForm}
           account={account}
@@ -1871,6 +1937,8 @@ function App() {
           loading={loadingPlan}
         />
         <AccountView
+          locked={hasSupabase && !session}
+          onLogin={() => setAuthOpen(true)}
           account={account}
           setAccount={setAccount}
           reports={reports}
@@ -1881,15 +1949,19 @@ function App() {
           onPlans={() => goTo("planes")}
           onOpen={openReport}
         />
-        <HelpView cities={CIUDADES} />
+        <HelpView cities={CIUDADES} onFeedback={setFeedback} />
       </main>
 
-      <SiteFooter />
+      <SiteFooter onFeedback={setFeedback} />
 
       <DetailModal
         key={selected?.id || "closed"}
         report={selected}
         onClose={() => setSelectedId(null)}
+        onReport={(id) => {
+          setSelectedId(null);
+          setFeedback({ tipo: "publicacion", reportId: hasSupabase ? id : null });
+        }}
         canManage={
           hasSupabase
             ? Boolean(selected && userId && selected.userId === userId)
@@ -1957,6 +2029,17 @@ function App() {
           return found
             ? { nombre: found.contactoNombre, telefono: found.contactoTelefono }
             : null;
+        }}
+      />
+
+      <FeedbackDialog
+        key={feedback ? `${feedback.tipo}-${feedback.reportId || ""}` : "closed"}
+        open={Boolean(feedback)}
+        preset={feedback}
+        onClose={() => setFeedback(null)}
+        onSent={(text) => {
+          setFeedback(null);
+          notify(text);
         }}
       />
 

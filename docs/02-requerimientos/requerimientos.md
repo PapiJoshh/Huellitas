@@ -24,6 +24,8 @@ Los requerimientos se clasifican por tipo y se indica su estado actual en el pro
 | RF-16 | El sistema debe permitir compartir un reporte por WhatsApp. | Media | Implementado |
 | RF-17 | El sistema debe enviar notificaciones por correo ante nuevos reportes en la ciudad de la persona. | Baja | Planeado |
 | RF-18 | El sistema debe contar con moderación de reportes y verificación formal de refugios. | Media | Planeado |
+| RF-19 | El sistema debe permitir enviar comentarios, reportar un problema y denunciar una publicación desde la propia página. | Media | Implementado |
+| RF-20 | El sistema debe exigir iniciar sesión para publicar y para ver la cuenta. | Alta | Implementado |
 
 ## Requerimientos no funcionales
 
