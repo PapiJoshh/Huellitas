@@ -1114,7 +1114,7 @@ function PlansView({
                 nombreNegocio: event.target.value,
               }))
             }
-            placeholder="Nombre del refugio o negocio"
+            placeholder="Refugio o negocio"
           />
           <input
             type="email"

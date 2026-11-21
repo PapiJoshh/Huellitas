@@ -1,194 +1,69 @@
 <div align="center">
 
-# 🐾 Huellita Perdida
+<img src="frontend/public/logo.svg" alt="Huellita Perdida" width="88">
 
-**Reporta, busca y comparte mascotas perdidas, encontradas y en adopción en tu ciudad.**
+# Huellita Perdida
 
-[![Deploy](https://github.com/PapiJoshh/Huellitas/actions/workflows/deploy-frontend.yml/badge.svg)](https://github.com/PapiJoshh/Huellitas/actions/workflows/deploy-frontend.yml)
-![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=white)
-![Vite](https://img.shields.io/badge/Vite-8-646CFF?logo=vite&logoColor=white)
-![Tailwind](https://img.shields.io/badge/Tailwind-3.4-06B6D4?logo=tailwindcss&logoColor=white)
-![Node](https://img.shields.io/badge/Node.js-Express-339933?logo=nodedotjs&logoColor=white)
-![Stripe](https://img.shields.io/badge/Pagos-Stripe-635BFF?logo=stripe&logoColor=white)
-![Supabase](https://img.shields.io/badge/Base%20de%20datos-Supabase-3ECF8E?logo=supabase&logoColor=white)
+Página para reportar mascotas perdidas, encontradas y en adopción.
 
-[**Ver sitio**](https://papijoshh.github.io/Huellitas/) · [**Documentación**](docs/README.md) · [**Documento integrador (PDF)**](docs/Producto-Integrador_Huellitas.pdf)
+[Ver sitio](https://papijoshh.github.io/Huellitas/) · [Documentación](docs/README.md) · [Documento integrador (PDF)](docs/Producto-Integrador_Huellitas.pdf)
 
-<img src="docs/assets/prototipo/inicio.jpg" alt="Pantalla de inicio de Huellita Perdida" width="720">
+<img src="docs/assets/prototipo/inicio.jpg" alt="Pantalla de inicio" width="720">
 
 </div>
 
----
-
 ## Sobre el proyecto
 
-Cuando una mascota se pierde, las primeras horas son decisivas, pero la difusión suele quedar dispersa en redes sociales y grupos de mensajería. **Huellita Perdida** centraliza los reportes en un tablón con filtros por ciudad y tipo, protege el teléfono de quien publica y ofrece a refugios y veterinarias herramientas para dar visibilidad a sus adopciones.
+Cuando una mascota se pierde, los avisos se riegan entre redes y grupos de mensajes. Huellita Perdida junta los reportes en un solo lugar, con filtros por ciudad y tipo, y sin mostrar el teléfono de quien publica a menos que decida compartirlo. Los refugios y veterinarias pueden contratar un plan para dar más visibilidad a sus adopciones.
 
-> Proyecto del **Equipo 2** para el producto integrador *La definición de un sistema Web* (Universidad de Guadalajara · UDG Plus).
+Proyecto del Equipo 2 para *La definición de un sistema Web* (UDG Virtual).
 
-## Funcionalidades
+## Qué hace
 
-- 🔎 **Tablón de reportes** de mascotas perdidas y encontradas, con búsqueda y filtros por tipo, ciudad y estado.
-- 🏡 **Adopciones** con edad, vacunación y esterilización, y la sección *Ya volvieron a casa*.
-- 📝 **Formulario guiado en tres pasos** con foto, datos de la mascota y contacto.
-- 👤 **Cuentas con Supabase Auth:** hay que iniciar sesión para publicar; cada persona solo puede resolver o eliminar sus propias publicaciones.
-- 🖼️ **Fotos en Supabase Storage** y reportes en base de datos compartida con seguridad por filas (RLS).
-- 📨 **Comentarios y denuncias** desde la propia página (tabla `feedback`), más aviso de privacidad y términos de uso.
-- 🔒 **Privacidad por diseño:** el teléfono solo se muestra cuando alguien abre la publicación y decide verlo.
-- 💳 **Planes de pago** para refugios y negocios con Stripe Checkout (modo demostración sin claves).
-- 🛟 **Ayuda:** guías para quien perdió, encontró o quiere adoptar, recomendaciones de seguridad y preguntas frecuentes.
+- Reportes de mascotas perdidas y encontradas, con búsqueda y filtros.
+- Adopciones y sección de mascotas que ya volvieron a casa.
+- Cuentas con correo y contraseña; hay que iniciar sesión para publicar.
+- Fotos y reportes guardados en Supabase.
+- Planes de pago para refugios con Stripe.
+- Ayuda, consejos de seguridad y formulario para comentarios o denuncias.
 
-### Planes
+## Tecnología
 
-| | Gratis | Refugio Pro | Negocio Premium |
-|---|:---:|:---:|:---:|
-| Precio | $0 | $249 MXN / mes | $499 MXN / mes |
-| Reportes de perdidos y encontrados | ✅ | ✅ | ✅ |
-| Adopciones activas | 3 | Ilimitadas | Ilimitadas |
-| Insignia de refugio verificado | — | ✅ | ✅ |
-| Publicaciones destacadas | — | ✅ | ✅ |
-| Estadísticas de interés | — | ✅ | ✅ |
-| Perfil para tu negocio y soporte prioritario | — | — | ✅ |
+React 19, Vite, Tailwind · Node.js y Express · Supabase (PostgreSQL, Auth, Storage) · Stripe · GitHub Pages y Render.
 
-## Capturas
+## Correrlo local
 
-| Reportes | Publicar | Planes |
-|:---:|:---:|:---:|
-| <img src="docs/assets/prototipo/reportes.jpg" width="260"> | <img src="docs/assets/prototipo/publicar.jpg" width="260"> | <img src="docs/assets/prototipo/planes.jpg" width="260"> |
-
-## Arquitectura
-
-```mermaid
-flowchart TB
-    U["Navegador"] --> F["Frontend<br/>React 19 + Vite + Tailwind<br/>GitHub Pages"]
-    F <-->|"Auth, reportes y fotos (RLS)"| DB[("Supabase<br/>PostgreSQL + Auth + Storage")]
-    F -->|"POST /api/create-checkout-session"| B["API REST<br/>Node.js + Express<br/>Render"]
-    B --> SP["Stripe Checkout"]
-    SP -->|"webhook checkout.session.completed"| B
-    B -->|"service role: suscripciones"| DB
-```
-
-| Capa | Tecnología |
-|---|---|
-| Interfaz | React 19, Vite 8, Tailwind CSS 3.4, Lucide |
-| Servidor | Node.js, Express 4 |
-| Pagos | Stripe Checkout |
-| Datos y sesiones | Supabase (PostgreSQL con RLS, Auth y Storage) |
-| Despliegue | GitHub Pages (frontend, con GitHub Actions) y Render (API) |
-
-## Inicio rápido
-
-**Requisitos:** Node.js 20 o superior.
+Necesitas Node.js 20 o superior.
 
 ```bash
 git clone https://github.com/PapiJoshh/Huellitas.git
 cd Huellitas
-
-npm install                    # herramientas de la raíz
+npm install
 npm install --prefix frontend
 npm install --prefix backend
-
-cp backend/.env.example backend/.env    # opcional: sin claves, el pago corre en modo demostración
 npm run dev
 ```
 
-- Frontend: <http://localhost:5173/Huellitas/>
-- API: <http://localhost:3001/api/health>
+El frontend queda en <http://localhost:5173/Huellitas/> y la API en <http://localhost:3001/api/health>.
 
-### Variables de entorno
+Sin variables de entorno funciona en modo local (los datos se guardan en el navegador). Para usar Supabase y Stripe copia `backend/.env.example` a `backend/.env` y `frontend/.env.example` a `frontend/.env`, y corre `backend/supabase/schema.sql` en el SQL Editor de Supabase.
 
-| Archivo | Variable | Descripción |
-|---|---|---|
-| `backend/.env` | `STRIPE_SECRET_KEY` | Clave secreta de Stripe (modo test: `sk_test_…`) |
-| | `STRIPE_WEBHOOK_SECRET` | Secreto de firma del webhook |
-| | `SUPABASE_URL` | URL del proyecto de Supabase |
-| | `SUPABASE_SERVICE_ROLE_KEY` | Clave de servicio (solo en el servidor) |
-| | `CLIENT_URL` | URL pública del frontend |
-| | `PORT` | Puerto de la API (3001 por defecto) |
-| `frontend/.env` | `VITE_API_URL` | URL pública de la API |
-| | `VITE_SUPABASE_URL` | URL del proyecto de Supabase |
-| | `VITE_SUPABASE_ANON_KEY` | Clave pública (anon); la protege RLS |
-
-
-Para probar el pago en modo test de Stripe usa la tarjeta `4242 4242 4242 4242`, cualquier fecha futura y cualquier CVC. 
-
-#### Configurar Supabase (una vez)
-
-1. Crea un proyecto en [supabase.com](https://supabase.com) y ejecuta `backend/supabase/schema.sql` en el **SQL Editor**. Crea tablas, políticas RLS, funciones, el bucket `fotos` y 5 reportes de ejemplo.
-2. En **Authentication → Providers** deja activo *Email*. Para pruebas puedes desactivar *Confirm email*.
-3. Pon la URL y la clave *anon* (públicas) en `frontend/.env.production`, que ya viene en el repo con el proyecto actual, o en `frontend/.env` para desarrollo. La URL y la *service role* (secreta) van solo en las variables de Render.
-
-Sin estas variables la app funciona en **modo local**: los datos viven en el navegador y no hay inicio de sesión.
-
-### Scripts
-
-| Comando | Qué hace |
-|---|---|
-| `npm run dev` | Levanta API y frontend a la vez |
-| `npm run build` | Compila el frontend en `frontend/dist` |
-| `npm run preview` | Sirve la compilación local |
-| `npm run server` | Levanta solo la API |
-| `npm run test:gold` | Prueba de humo: API, checkout y compilación |
-
-### API
-
-| Método | Ruta | Descripción |
-|---|---|---|
-| `GET` | `/api/health` | Estado del servidor y de los servicios configurados |
-| `POST` | `/api/create-checkout-session` | Crea la sesión de pago de un plan (`pro` o `premium`); exige sesión de Supabase |
-| `POST` | `/api/webhook/stripe` | Webhook firmado de Stripe que activa la suscripción |
-
-## Estructura del repositorio
+## Estructura
 
 ```text
-Huellitas/
-├── frontend/              # React + Vite + Tailwind
-│   └── src/               #   App.jsx, AuthPanel.jsx, lib/{supabase,data,payments}.js
-├── backend/               # API Express
-│   ├── index.js
-│   └── supabase/schema.sql
-├── docs/                  # Documentación del producto integrador
-│   ├── 01-planeacion/     #   problema, objetivos, matriz RACI, Gantt
-│   ├── 02-requerimientos/
-│   ├── 03-diseno/         #   carta de navegación, wireframes, casos de uso
-│   ├── 04-tecnologia/     #   framework seleccionado y justificación
-│   ├── 05-prototipos/     #   maquetas y capturas
-│   └── assets/            #   diagramas, wireframes y capturas
-├── scripts/golden-test.cjs
-├── .github/workflows/     # Despliegue automático a GitHub Pages
-└── render.yaml            # Configuración del servicio en Render
+frontend/   React + Vite
+backend/    API Express y schema.sql de Supabase
+docs/       Documentación del producto integrador
 ```
 
 ## Documentación
 
-| Apartado | Documento |
-|---|---|
-| Planteamiento del problema, contexto y justificación | [docs/01-planeacion](docs/01-planeacion/01-planteamiento-del-problema.md) |
-| Planeación y objetivos | [docs/01-planeacion](docs/01-planeacion/02-planeacion-y-objetivos.md) |
-| Matriz de responsabilidades | [docs/01-planeacion](docs/01-planeacion/03-matriz-de-responsabilidades.md) |
-| Diagrama de Gantt | [docs/01-planeacion](docs/01-planeacion/04-diagrama-de-gantt.md) |
-| Requerimientos | [docs/02-requerimientos](docs/02-requerimientos/requerimientos.md) |
-| Carta de navegación | [docs/03-diseno](docs/03-diseno/01-carta-de-navegacion.md) |
-| Wireframes | [docs/03-diseno](docs/03-diseno/02-wireframes.md) |
-| Casos de uso | [docs/03-diseno](docs/03-diseno/03-casos-de-uso.md) |
-| CMS o framework seleccionado | [docs/04-tecnologia](docs/04-tecnologia/framework-seleccionado.md) |
-| Prototipos y maquetas | [docs/05-prototipos](docs/05-prototipos/prototipos-y-maquetas.md) |
-| **Documento integrador completo** | [Word](docs/Producto-Integrador_Huellitas.docx) · [PDF](docs/Producto-Integrador_Huellitas.pdf) |
-
-## Estado y hoja de ruta
-
-El prototipo es funcional de extremo a extremo para el flujo de reportes, adopciones y contratación de planes. Con Supabase configurado, las cuentas, los reportes y las fotos viven en la base de datos; sin configurarlo, la app funciona en modo local.
-
-- [x] Inicio de sesión y reportes en base de datos compartida
-- [x] Activación de planes solo desde el webhook firmado de Stripe
-- [ ] Moderación y verificación de refugios
-- [x] Compartir por WhatsApp
-- [ ] Notificaciones por correo
+Planteamiento, planeación, requerimientos, diseño, tecnología y prototipos están en [docs](docs/README.md). El documento completo: [Word](docs/Producto-Integrador_Huellitas.docx) · [PDF](docs/Producto-Integrador_Huellitas.pdf).
 
 ## Equipo
 
-**Equipo 2 · Universidad de Guadalajara (UDG Plus)**
+Equipo 2 · Universidad de Guadalajara
 
-- Joshua Jonathan Moran Cruz — [@PapiJoshh](https://github.com/PapiJoshh)
+- Joshua Jonathan Moran Cruz ([@PapiJoshh](https://github.com/PapiJoshh))
 - Andrea Cristina
 - Jahir Cruz
