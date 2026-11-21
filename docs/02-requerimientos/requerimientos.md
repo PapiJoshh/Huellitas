@@ -26,6 +26,7 @@ Los requerimientos se clasifican por tipo y se indica su estado actual en el pro
 | RF-18 | El sistema debe contar con moderación de reportes y verificación formal de refugios. | Media | Planeado |
 | RF-19 | El sistema debe permitir enviar comentarios, reportar un problema y denunciar una publicación desde la propia página. | Media | Implementado |
 | RF-20 | El sistema debe exigir iniciar sesión para publicar y para ver la cuenta. | Alta | Implementado |
+| RF-21 | El sistema debe incluir un rol de administrador que, con su sesión normal, vea todas las publicaciones, comentarios y usuarios, y pueda resolver o eliminar cualquier publicación. | Alta | Implementado |
 
 ## Requerimientos no funcionales
 

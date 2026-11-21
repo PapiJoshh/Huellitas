@@ -26,6 +26,7 @@ Proyecto del Equipo 2 para *La definición de un sistema Web* (UDG Virtual).
 - Fotos y reportes guardados en Supabase.
 - Planes de pago para refugios con Stripe.
 - Ayuda, consejos de seguridad y formulario para comentarios o denuncias.
+- Panel de administración (solo para cuentas admin): ver y borrar publicaciones, leer comentarios y denuncias.
 
 ## Tecnología
 

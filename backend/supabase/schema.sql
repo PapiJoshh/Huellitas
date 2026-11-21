@@ -294,3 +294,66 @@ values
   ('00000000-0000-4000-8000-000000000004', 'Refugio Patitas Felices', '44 2700 1122'),
   ('00000000-0000-4000-8000-000000000005', 'Casa Animal Puebla', '22 2301 4480')
 on conflict (report_id) do nothing;
+
+-- ---------------------------------------------------------------------
+--  8. Administración (rol de admin sin claves aparte: inicia sesión normal)
+-- ---------------------------------------------------------------------
+create table if not exists public.admins (
+  user_id    uuid primary key references auth.users(id) on delete cascade,
+  created_at timestamptz not null default now()
+);
+
+alter table public.admins enable row level security;
+revoke all on public.admins from anon, authenticated;   -- solo se edita desde el SQL Editor
+
+create or replace function public.is_admin()
+returns boolean
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select exists (select 1 from public.admins where user_id = auth.uid());
+$$;
+
+revoke execute on function public.is_admin() from public;
+grant execute on function public.is_admin() to anon, authenticated;
+
+-- Reportes: el admin puede resolver y eliminar cualquiera.
+drop policy if exists "reportes: admin actualiza" on public.reports;
+create policy "reportes: admin actualiza" on public.reports
+  for update to authenticated using (public.is_admin()) with check (public.is_admin());
+
+drop policy if exists "reportes: admin elimina" on public.reports;
+create policy "reportes: admin elimina" on public.reports
+  for delete to authenticated using (public.is_admin());
+
+-- Contactos y perfiles: el admin los puede ver.
+drop policy if exists "contacto: admin lee" on public.report_contacts;
+create policy "contacto: admin lee" on public.report_contacts
+  for select to authenticated using (public.is_admin());
+
+drop policy if exists "perfil: admin lee" on public.profiles;
+create policy "perfil: admin lee" on public.profiles
+  for select to authenticated using (public.is_admin());
+
+-- Comentarios y denuncias: solo el admin los lee y los borra.
+grant select, delete on public.feedback to authenticated;
+
+drop policy if exists "feedback: admin lee" on public.feedback;
+create policy "feedback: admin lee" on public.feedback
+  for select to authenticated using (public.is_admin());
+
+drop policy if exists "feedback: admin elimina" on public.feedback;
+create policy "feedback: admin elimina" on public.feedback
+  for delete to authenticated using (public.is_admin());
+
+-- Fotos: el admin puede borrar cualquiera.
+drop policy if exists "fotos: admin elimina" on storage.objects;
+create policy "fotos: admin elimina" on storage.objects
+  for delete to authenticated using (bucket_id = 'fotos' and public.is_admin());
+
+-- Para nombrar a un admin, ejecuta esto una vez con tu correo:
+-- insert into public.admins (user_id)
+--   select id from auth.users where email = 'tu-correo@ejemplo.com'
+--   on conflict do nothing;

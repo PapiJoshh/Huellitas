@@ -170,3 +170,56 @@ export async function sendFeedback({ tipo, mensaje, contacto, reportId }) {
   saved.push({ ...row, fecha: new Date().toISOString() });
   window.localStorage.setItem(key, JSON.stringify(saved));
 }
+
+// ---------------------------------------------------------------------
+//  Administración (solo responde si la cuenta está en la tabla `admins`)
+// ---------------------------------------------------------------------
+export async function fetchIsAdmin() {
+  const { data, error } = await supabase.rpc("is_admin");
+  if (error) return false;
+  return data === true;
+}
+
+export async function fetchAdminData() {
+  const [feedback, profiles, contacts] = await Promise.all([
+    supabase
+      .from("feedback")
+      .select("id,tipo,mensaje,contacto,report_id,created_at")
+      .order("created_at", { ascending: false })
+      .limit(200),
+    supabase
+      .from("profiles")
+      .select("user_id,email,tipo,nombre_negocio,created_at")
+      .order("created_at", { ascending: false })
+      .limit(200),
+    supabase.from("report_contacts").select("report_id,nombre,telefono"),
+  ]);
+  const failed = feedback.error || profiles.error || contacts.error;
+  if (failed) throw failed;
+  return {
+    feedback: feedback.data,
+    profiles: profiles.data,
+    contacts: Object.fromEntries(
+      contacts.data.map((row) => [row.report_id, row]),
+    ),
+  };
+}
+
+export async function deleteFeedback(id) {
+  const { error } = await supabase.from("feedback").delete().eq("id", id);
+  if (error) throw error;
+}
+
+// Borra la foto del almacenamiento; si no se puede, no estorba.
+export async function removePhoto(url) {
+  const marker = "/fotos/";
+  const at = url ? url.indexOf(marker) : -1;
+  if (at < 0) return;
+  await supabase.storage
+    .from("fotos")
+    .remove([decodeURIComponent(url.slice(at + marker.length).split("?")[0])])
+    .then(
+      () => {},
+      () => {},
+    );
+}

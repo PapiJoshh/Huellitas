@@ -40,12 +40,15 @@ import AuthPanel from "./AuthPanel";
 import FeedbackDialog from "./FeedbackDialog";
 import LegalDialog from "./LegalDialog";
 import LogoMark from "./LogoMark";
+import AdminPanel from "./AdminPanel";
 import { hasSupabase, supabase } from "./lib/supabase";
 import {
   bumpView,
   createReport,
   fetchActivePlan,
   fetchProfile,
+  fetchIsAdmin,
+  removePhoto,
   fetchReports,
   isAdoptionLimitError,
   markResolved,
@@ -475,7 +478,7 @@ function filterReports(reports, filters, adoption) {
     );
 }
 
-function Header({ session, onLogin, onLogout }) {
+function Header({ session, isAdmin, onLogin, onLogout }) {
   const active = useActiveSection();
 
   return (
@@ -500,6 +503,11 @@ function Header({ session, onLogin, onLogout }) {
           ))}
         </nav>
         <div className="header-actions">
+          {isAdmin && (
+            <a className="btn btn-secondary header-cta" href="#admin">
+              <ShieldCheck /> Admin
+            </a>
+          )}
           <a
             className={`btn btn-secondary header-cta ${active === "cuenta" ? "is-active" : ""}`}
             href="#cuenta"
@@ -1565,6 +1573,7 @@ function App() {
     hasSupabase ? EMPTY_ACCOUNT : loadAccount,
   );
   const [session, setSession] = useState(null);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [authOpen, setAuthOpen] = useState(false);
   const [feedback, setFeedback] = useState(null);
   const [legal, setLegal] = useState(null);
@@ -1633,6 +1642,17 @@ function App() {
     );
     return () => data.subscription.unsubscribe();
   }, []);
+
+  useEffect(() => {
+    if (!hasSupabase) return undefined;
+    let cancelled = false;
+    (userId ? fetchIsAdmin() : Promise.resolve(false)).then((value) => {
+      if (!cancelled) setIsAdmin(value);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [userId]);
 
   useEffect(() => {
     if (!hasSupabase) return undefined;
@@ -1725,6 +1745,39 @@ function App() {
     () => reports.filter((report) => report.tipo === "adopcion"),
     [reports],
   );
+
+  async function adminResolve(id) {
+    try {
+      await markResolved(id);
+    } catch {
+      notify("No se pudo actualizar la publicación.", "error");
+      return;
+    }
+    setReports((current) =>
+      current.map((report) =>
+        report.id === id ? { ...report, estado: "resuelto" } : report,
+      ),
+    );
+    notify("Publicación marcada como resuelta.");
+  }
+
+  async function adminDelete(report) {
+    if (
+      !window.confirm(
+        `¿Eliminar "${report.nombre || "esta publicación"}"? No se puede deshacer.`,
+      )
+    )
+      return;
+    try {
+      await removeReport(report.id);
+      removePhoto(report.foto);
+    } catch {
+      notify("No se pudo eliminar la publicación.", "error");
+      return;
+    }
+    setReports((current) => current.filter((item) => item.id !== report.id));
+    notify("La publicación fue eliminada.");
+  }
 
   const selected =
     reports.find((report) => report.id === selectedId) || null;
@@ -1871,6 +1924,7 @@ function App() {
       </a>
       <Header
         session={session}
+        isAdmin={isAdmin}
         onLogin={() => setAuthOpen(true)}
         onLogout={() => supabase.auth.signOut()}
       />
@@ -1954,6 +2008,15 @@ function App() {
           onOpen={openReport}
         />
         <HelpView cities={CIUDADES} onFeedback={setFeedback} />
+        {isAdmin && (
+          <AdminPanel
+            reports={reports}
+            onOpen={openReport}
+            onResolve={adminResolve}
+            onDelete={adminDelete}
+            notify={notify}
+          />
+        )}
       </main>
 
       <SiteFooter onFeedback={setFeedback} onLegal={setLegal} />
@@ -1970,7 +2033,9 @@ function App() {
         }}
         canManage={
           hasSupabase
-            ? Boolean(selected && userId && selected.userId === userId)
+            ? Boolean(
+                selected && userId && (isAdmin || selected.userId === userId),
+              )
             : true
         }
         onResolve={async (id) => {
@@ -1994,6 +2059,7 @@ function App() {
           if (hasSupabase) {
             try {
               await removeReport(id);
+              if (isAdmin) removePhoto(reports.find((r) => r.id === id)?.foto);
             } catch {
               notify("No se pudo eliminar la publicación.", "error");
               return;
