@@ -114,7 +114,7 @@ Para probar el pago en modo test de Stripe usa la tarjeta `4242 4242 4242 4242`,
 
 1. Crea un proyecto en [supabase.com](https://supabase.com) y ejecuta `backend/supabase/schema.sql` en el **SQL Editor**. Crea tablas, políticas RLS, funciones, el bucket `fotos` y 5 reportes de ejemplo.
 2. En **Authentication → Providers** deja activo *Email*. Para pruebas puedes desactivar *Confirm email*.
-3. Copia la URL y la clave *anon* a `frontend/.env` (o a los *secrets* `VITE_SUPABASE_URL` y `VITE_SUPABASE_ANON_KEY` de GitHub Actions) y la URL y la *service role* a las variables de Render.
+3. Pon la URL y la clave *anon* (públicas) en `frontend/.env.production`, que ya viene en el repo con el proyecto actual, o en `frontend/.env` para desarrollo. La URL y la *service role* (secreta) van solo en las variables de Render.
 
 Sin estas variables la app funciona en **modo local**: los datos viven en el navegador y no hay inicio de sesión.
 
