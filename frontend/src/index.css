@@ -2670,3 +2670,39 @@ main.page-wrap {
     display: none;
   }
 }
+
+.legal-dialog {
+  width: min(620px, calc(100vw - 32px));
+  max-height: calc(100vh - 3rem);
+  display: flex;
+  flex-direction: column;
+}
+.legal-body {
+  overflow-y: auto;
+  display: grid;
+  gap: 1rem;
+  padding-right: 0.25rem;
+}
+.legal-body h3 {
+  font-size: 1rem;
+  margin-bottom: 0.2rem;
+}
+.legal-body p {
+  color: var(--ink-2);
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+.skip-link {
+  position: absolute;
+  left: 1rem;
+  top: -4rem;
+  z-index: 100;
+  padding: 0.6rem 1rem;
+  border-radius: var(--radius-s);
+  background: var(--blue);
+  color: #fff;
+  text-decoration: none;
+}
+.skip-link:focus {
+  top: 0.75rem;
+}

@@ -271,7 +271,7 @@ export function HelpView({ cities, onFeedback }) {
   );
 }
 
-export function SiteFooter({ onFeedback }) {
+export function SiteFooter({ onFeedback, onLegal }) {
   const link = (id, label) => (
     <li>
       <a href={`#${id}`}>{label}</a>
@@ -328,7 +328,21 @@ export function SiteFooter({ onFeedback }) {
         </div>
         <p className="footer-bottom">
           © {new Date().getFullYear()} Huellita Perdida. Hecho con cuidado para
-          cada huella.
+          cada huella.{" "}
+          <button
+            type="button"
+            className="footer-link-button"
+            onClick={() => onLegal("privacidad")}
+          >
+            Aviso de privacidad
+          </button>{" · "}
+          <button
+            type="button"
+            className="footer-link-button"
+            onClick={() => onLegal("terminos")}
+          >
+            Términos de uso
+          </button>
         </p>
       </div>
     </footer>

@@ -38,6 +38,7 @@ import {
 import heroImage from "./assets/huellita-hero.webp";
 import AuthPanel from "./AuthPanel";
 import FeedbackDialog from "./FeedbackDialog";
+import LegalDialog from "./LegalDialog";
 import { hasSupabase, supabase } from "./lib/supabase";
 import {
   bumpView,
@@ -1567,6 +1568,7 @@ function App() {
   const [session, setSession] = useState(null);
   const [authOpen, setAuthOpen] = useState(false);
   const [feedback, setFeedback] = useState(null);
+  const [legal, setLegal] = useState(null);
   const profileReady = useRef(false);
   const [paymentReturn, setPaymentReturn] = useState(() => {
     const params = new URLSearchParams(window.location.search);
@@ -1865,6 +1867,9 @@ function App() {
 
   return (
     <div className="app-shell">
+      <a className="skip-link" href="#reportes">
+        Saltar al contenido
+      </a>
       <Header
         session={session}
         onLogin={() => setAuthOpen(true)}
@@ -1952,7 +1957,9 @@ function App() {
         <HelpView cities={CIUDADES} onFeedback={setFeedback} />
       </main>
 
-      <SiteFooter onFeedback={setFeedback} />
+      <SiteFooter onFeedback={setFeedback} onLegal={setLegal} />
+
+      <LegalDialog doc={legal} onClose={() => setLegal(null)} />
 
       <DetailModal
         key={selected?.id || "closed"}

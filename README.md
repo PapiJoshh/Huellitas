@@ -31,6 +31,9 @@ Cuando una mascota se pierde, las primeras horas son decisivas, pero la difusió
 - 🔎 **Tablón de reportes** de mascotas perdidas y encontradas, con búsqueda y filtros por tipo, ciudad y estado.
 - 🏡 **Adopciones** con edad, vacunación y esterilización, y la sección *Ya volvieron a casa*.
 - 📝 **Formulario guiado en tres pasos** con foto, datos de la mascota y contacto.
+- 👤 **Cuentas con Supabase Auth:** hay que iniciar sesión para publicar; cada persona solo puede resolver o eliminar sus propias publicaciones.
+- 🖼️ **Fotos en Supabase Storage** y reportes en base de datos compartida con seguridad por filas (RLS).
+- 📨 **Comentarios y denuncias** desde la propia página (tabla `feedback`), más aviso de privacidad y términos de uso.
 - 🔒 **Privacidad por diseño:** el teléfono solo se muestra cuando alguien abre la publicación y decide verlo.
 - 💳 **Planes de pago** para refugios y negocios con Stripe Checkout (modo demostración sin claves).
 - 🛟 **Ayuda:** guías para quien perdió, encontró o quiere adoptar, recomendaciones de seguridad y preguntas frecuentes.
