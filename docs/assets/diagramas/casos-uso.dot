@@ -1,0 +1,27 @@
+digraph CU {
+  rankdir=LR; splines=true; nodesep=0.35; ranksep=1.6; bgcolor=white;
+  node [fontname="Helvetica", fontsize=12];
+  edge [arrowhead=none, color="#475569"];
+  subgraph cluster_sys { label="Sistema Huellita Perdida"; fontname="Helvetica-Bold"; fontsize=14; style="rounded"; color="#0B6BDE"; margin=22;
+    node [shape=ellipse, style=filled, fillcolor="#E8F1FD", color="#0B6BDE"];
+    cu1 [label="CU-01\nConsultar tablón\nde reportes"];
+    cu2 [label="CU-02\nFiltrar por tipo\ny ciudad"];
+    cu3 [label="CU-03\nVer datos\nde contacto"];
+    cu4 [label="CU-04\nPublicar reporte"];
+    cu5 [label="CU-05\nMarcar como\nreunidos"];
+    cu6 [label="CU-06\nConsultar ayuda"];
+    cu7 [label="CU-07\nPublicar adopción"];
+    cu8 [label="CU-08\nContratar plan"];
+    cu9 [label="CU-09\nGestionar cuenta"];
+    cu10 [label="CU-10\nProcesar pago"];
+  }
+  v [shape=box, style=rounded, label="Persona usuaria\n(particular)", fillcolor="#FFF4E0", style="rounded,filled", color="#B45309"];
+  n [shape=box, label="Refugio o negocio\n(plan Pro / Premium)", style="rounded,filled", fillcolor="#FFF4E0", color="#B45309"];
+  s [shape=box, label="Stripe\n(sistema externo)", style="rounded,filled", fillcolor="#EDE9FE", color="#6D28D9"];
+  v -> cu1; v -> cu3; v -> cu4; v -> cu5; v -> cu6;
+  n -> cu1; n -> cu7; n -> cu8; n -> cu9;
+  cu2 -> cu1 [arrowhead=open, style=dashed, label="«extend»", fontsize=10, fontname="Helvetica"];
+  cu8 -> cu10 [arrowhead=open, style=dashed, label="«include»", fontsize=10, fontname="Helvetica"];
+  cu10 -> s;
+  {rank=same; v; n}
+}

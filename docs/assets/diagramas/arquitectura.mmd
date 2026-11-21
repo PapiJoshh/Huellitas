@@ -1,0 +1,13 @@
+flowchart TB
+    U["Navegador<br/>(persona usuaria)"]
+    F["Frontend<br/>React 19 + Vite + Tailwind<br/>GitHub Pages"]
+    L[("localStorage<br/>reportes y cuenta")]
+    B["API REST<br/>Node.js + Express<br/>Render"]
+    SP["Stripe Checkout"]
+    DB[("Supabase<br/>PostgreSQL<br/>tabla subscriptions")]
+    U --> F
+    F <--> L
+    F -->|POST /api/create-checkout-session| B
+    B --> SP
+    SP -->|webhook checkout.session.completed| B
+    B --> DB
