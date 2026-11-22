@@ -20,6 +20,17 @@
 | Esquema de base de datos | `backend/supabase/schema.sql` |
 | Despliegue automatizado | `.github/workflows/deploy-frontend.yml`, `render.yaml` |
 
+## Documentos del equipo en el repositorio compartido de Drive
+
+El equipo entregó en Google Drive, con la asesora, los documentos de cada unidad. Este producto integrador los complementa con el sistema ya construido y publicado.
+
+| Documento del equipo (Drive) | Cómo se relaciona con este documento |
+|---|---|
+| Unidad 1. Tipos de proyectos web y Scrum | Fundamenta la clasificación como aplicación web dinámica y la metodología (Scrum con Trello) de la planeación. |
+| Unidad 2. Etapas de desarrollo, hosting y arquitectura | Sustenta las etapas del proyecto, el despliegue en GitHub Pages y Render, y la arquitectura en tres capas. |
+| Unidad 3. Diseño del sistema (arquitectura UX/UI, componentes funcionales, diagrama de funcionalidades y de clases) | Se refleja en la carta de navegación, los wireframes, los casos de uso y el modelo de datos de Supabase. |
+| Producto integrador del equipo (documento base de la asesora) | Define roles Scrum, matriz RACI y capítulos; este documento añade el prototipo funcional, el panel de administración y el análisis de seguridad, privacidad y ética. |
+
 ## Conclusiones
 
 Huellitas parte de un problema concreto y cotidiano y lo resuelve con una aplicación ligera, de costo de operación bajo y con privacidad desde el diseño. El curso permitió recorrer el ciclo completo: planteamiento, planeación, requerimientos, diseño, selección tecnológica y prototipo, cada uno documentado y enlazado con el siguiente.

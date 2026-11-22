@@ -25,16 +25,25 @@ Desarrollar una aplicación web que centralice reportes de mascotas perdidas, en
 - Inicio de sesión con correo y contraseña (Supabase Auth) y reportes guardados en base de datos compartida.
 - Compartir reportes por WhatsApp.
 - Sección de ayuda con guías de seguridad y preguntas frecuentes.
+- Panel de administración para moderar reportes, comentarios y usuarios.
 
 **No incluye en esta etapa:**
 
 - Notificaciones por correo.
-- Moderación de contenido y verificación formal de refugios.
+- Verificación formal de refugios.
 - Aplicación móvil nativa.
 
 ## Metodología
 
-El equipo trabaja con un enfoque **iterativo e incremental**: cada fase produce un entregable revisable (documento, wireframe, maqueta o módulo funcional) que se integra al repositorio antes de pasar a la siguiente. El control de versiones se lleva en GitHub y el despliegue del frontend se automatiza con GitHub Actions.
+El equipo trabaja con el marco ágil **Scrum**, con entregas iterativas e incrementales. El seguimiento se lleva en un tablero **Kanban en Trello**, organizado en cuatro fases (toma de requerimientos, planeación, diseño y desarrollo), enlazado a un repositorio compartido en Google Drive con la asesora. Los tres pilares de Scrum se aplican así:
+
+| Pilar | Cómo se aplica en el proyecto |
+|---|---|
+| Transparencia | Backlog, avances y dificultades visibles para todo el equipo y la asesora en Trello y Drive. |
+| Inspección | Revisión de cada incremento (formularios, fotos, filtros, diseño responsivo) con criterios de aceptación. |
+| Adaptación | Reordenar tarjetas y prioridades cuando la revisión detecta desviaciones. |
+
+El control de versiones se lleva en GitHub y el despliegue del frontend se automatiza con GitHub Actions.
 
 ## Etapas del proyecto
 
