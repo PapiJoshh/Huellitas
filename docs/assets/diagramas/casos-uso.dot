@@ -14,14 +14,17 @@ digraph CU {
     cu8 [label="CU-08\nContratar plan"];
     cu9 [label="CU-09\nGestionar cuenta"];
     cu10 [label="CU-10\nProcesar pago"];
+    cu12 [label="CU-12\nAdministrar\nla plataforma"];
   }
   v [shape=box, style=rounded, label="Persona usuaria\n(particular)", fillcolor="#FFF4E0", style="rounded,filled", color="#B45309"];
   n [shape=box, label="Refugio o negocio\n(plan Pro / Premium)", style="rounded,filled", fillcolor="#FFF4E0", color="#B45309"];
+  a [shape=box, label="Administrador\n(equipo)", style="rounded,filled", fillcolor="#FFF4E0", color="#B45309"];
   s [shape=box, label="Stripe\n(sistema externo)", style="rounded,filled", fillcolor="#EDE9FE", color="#6D28D9"];
   v -> cu1; v -> cu3; v -> cu4; v -> cu5; v -> cu6;
   n -> cu1; n -> cu7; n -> cu8; n -> cu9;
   cu2 -> cu1 [arrowhead=open, style=dashed, label="«extend»", fontsize=10, fontname="Helvetica"];
   cu8 -> cu10 [arrowhead=open, style=dashed, label="«include»", fontsize=10, fontname="Helvetica"];
   cu10 -> s;
-  {rank=same; v; n}
+  a -> cu12; a -> cu1;
+  {rank=same; v; n; a}
 }

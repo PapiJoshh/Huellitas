@@ -6,6 +6,7 @@
 |---|---|
 | Persona usuaria (particular) | Quien reporta, busca o consulta mascotas. No requiere pago. |
 | Refugio o negocio | Organización que publica adopciones y puede contratar un plan Pro o Premium. |
+| Administrador | Integrante del equipo con rol de administrador. Inicia sesión como cualquier persona, pero puede revisar y moderar todo el contenido. |
 | Stripe | Sistema externo que procesa el pago y notifica la confirmación al servidor. |
 
 ## Diagrama de casos de uso
@@ -27,6 +28,7 @@
 | CU-09 | Gestionar cuenta | Refugio o negocio |
 | CU-10 | Procesar pago | Stripe |
 | CU-11 | Iniciar sesión o registrarse | Persona usuaria, refugio |
+| CU-12 | Administrar la plataforma | Administrador |
 
 ## Especificación de los casos principales
 
@@ -65,8 +67,18 @@
 | Actor | Persona usuaria o refugio |
 | Precondición | Ninguna. |
 | Flujo principal | 1. La persona elige «Iniciar sesión». 2. Captura correo y contraseña (mínimo 6 caracteres). 3. El sistema valida las credenciales con Supabase Auth. 4. La sesión queda activa y se carga su perfil y su plan. |
-| Flujo alterno | Si es la primera vez, elige «Regístrate» y el sistema crea la cuenta (puede pedir confirmar el correo). Si las credenciales son incorrectas, el sistema lo indica. |
+| Flujo alterno | Si es la primera vez, elige «Regístrate» y el sistema crea la cuenta. Si las credenciales son incorrectas, el sistema lo indica. |
 | Postcondición | La persona puede publicar, administrar sus reportes y contratar planes. |
+
+### CU-12 Administrar la plataforma
+
+| Campo | Detalle |
+|---|---|
+| Actor | Administrador |
+| Precondición | La cuenta del administrador está registrada en la tabla `admins` de la base de datos (solo se asigna desde Supabase, nunca desde el sitio). |
+| Flujo principal | 1. Inicia sesión con su correo y contraseña. 2. El sistema consulta su rol y muestra el botón «Admin». 3. Abre el panel de administración. 4. Revisa publicaciones, comentarios, denuncias y usuarios registrados. 5. Marca como resuelta o elimina una publicación, o elimina un comentario. |
+| Flujo alterno | Si la cuenta no es administradora, el sistema no muestra el panel y la base de datos rechaza cualquier intento de borrar contenido ajeno. |
+| Postcondición | El contenido moderado deja de mostrarse al público; al eliminar una publicación se elimina también su foto. |
 
 ### CU-08 Contratar plan
 
